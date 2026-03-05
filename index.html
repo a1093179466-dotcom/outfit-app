@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>今日穿搭</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header>
+  <h1>今日穿搭助手</h1>
+</header>
+
+<div class="container">
+
+  <!-- 左侧衣柜 -->
+    <div class="wardrobe">
+        <h2>我的衣柜</h2>
+        <div class="add-form">
+        <input id="clothName" type="text" placeholder="衣服名称">
+        <input id="clothImage" type="file">
+        <input id="clothTag" type="text" placeholder="tag（例如：上衣/裤子/鞋）">
+        <button id="addClothBtn">添加衣服</button>
+        </div>
+        <hr>
+        <div id="clothList"></div>
+    </div>
+
+
+  <!-- 中间操作 -->
+  <div class="control">
+
+    <button id="generateBtn">
+      生成今日穿搭
+    </button>
+
+  </div>
+
+
+  <!-- 右侧结果 -->
+  <div class="result">
+    <h2>今日穿搭</h2>
+    <div id="outfitTop" class="outfit-card">
+    上衣：--
+    </div>
+
+    <div id="outfitPants" class="outfit-card">
+    裤子：--
+    </div>
+
+    <div id="outfitShoes" class="outfit-card">
+    鞋子：--
+    </div>
+</div>
+
+<script src="js/app.js"></script>
+
+</body>
+</html>
