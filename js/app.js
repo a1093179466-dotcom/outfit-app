@@ -1,142 +1,88 @@
-let clothes = JSON.parse(localStorage.getItem("clothes")) || [];
+import { addCloth, deleteClothById, getClothes } from "./wardrobe.js";
+import { generateOutfit } from "./outfit.js";
+import { renderWardrobe, renderOutfit } from "./ui.js";
 
-const addBtn = document.getElementById("addClothBtn");
+const clothNameInput = document.getElementById("clothName");
+const clothTagInput = document.getElementById("clothTag");
+const clothImageInput = document.getElementById("clothImage");
+const addClothBtn = document.getElementById("addClothBtn");
+const generateBtn = document.getElementById("generateBtn");
 
-addBtn.onclick = function(){
+init();
 
-const name = document.getElementById("clothName").value;
-const tag = document.getElementById("clothTag").value;
-const imageFile = document.getElementById("clothImage").files[0];
+function init() {
+  refreshWardrobeView();
 
-
-if(name.trim() === ""){
-alert("衣服名称不能为空");
-return;
+  addClothBtn.addEventListener("click", handleAddCloth);
+  generateBtn.addEventListener("click", handleGenerateOutfit);
 }
 
-if(imageFile){
-
-const reader = new FileReader();
-
-reader.onload = function(e){
-
-const imageData = e.target.result;
-
-addCloth(name,tag,imageData);
-
+function refreshWardrobeView() {
+  renderWardrobe(getClothes(), {
+    onDelete: (id) => {
+      deleteClothById(id);
+      refreshWardrobeView();
+    },
+  });
 }
 
-reader.readAsDataURL(imageFile);
+function handleAddCloth() {
+  const name = clothNameInput.value.trim();
+  const tag = clothTagInput.value.trim();
+  const file = clothImageInput.files?.[0];
 
-}else{
+  if (!name) {
+    alert("衣服名称不能为空");
+    return;
+  }
 
-addCloth(name,tag,null);
+  if (!tag) {
+    alert("tag 不能为空（先用：上衣 / 裤子 / 鞋子）");
+    return;
+  }
 
-}
-
-}
-
-
-function addCloth(name,tag,image){
-
-    const cloth = {
-    name:name,
-    tag:tag,
-    image:image
-    };
-
-    clothes.push(cloth);
-
-    saveClothes();
-
-    renderClothes();
-
-}
-function renderClothes(){
-    const list = document.getElementById("clothList");
-    list.innerHTML = "";
-    clothes.forEach((cloth,index)=>{
-    const div = document.createElement("div");
-    div.className = "cloth-card";
-    let imgHTML = "";
-    if(cloth.image){
-        imgHTML = `<img src="${cloth.image}">`;
+  // 有图片就先读取，再添加；无图片直接添加
+  if (file) {
+    readFileAsDataURL(file)
+      .then((imageDataUrl) => {
+        addCloth({ name, tag, image: imageDataUrl });
+        clearForm();
+        refreshWardrobeView();
+      })
+      .catch((error) => {
+        console.error(error);
+        alert("图片读取失败，请重试。");
+      });
+  } else {
+    try {
+      addCloth({ name, tag, image: null });
+      clearForm();
+      refreshWardrobeView();
+    } catch (error) {
+      alert(error.message);
     }
-    div.innerHTML = `
-        ${imgHTML}
-
-        <div class="cloth-name">${cloth.name}</div>
-        <span class="tag">${cloth.tag}</span>
-        <button class="delete-btn" onclick="deleteCloth(${index})">删除</button>
-        `;
-    list.appendChild(div);
-    });
+  }
 }
 
-function deleteCloth(index){
-
-    clothes.splice(index,1);
-
-    saveClothes();
-
-    renderClothes();
-
+function handleGenerateOutfit() {
+  const clothes = getClothes();
+  const outfit = generateOutfit(clothes);
+  renderOutfit(outfit);
 }
 
-    /* 生成穿搭 */
-
-    const btn = document.getElementById("generateBtn");
-
-    btn.onclick = function(){
-
-    const tops = clothes.filter(c => c.tag === "上衣");
-    const pants = clothes.filter(c => c.tag === "裤子");
-    const shoes = clothes.filter(c => c.tag === "鞋子");
-
-    const top = randomItem(tops);
-    const pant = randomItem(pants);
-    const shoe = randomItem(shoes);
-
-    showOutfit("outfitTop","上衣",top);
-    showOutfit("outfitPants","裤子",pant);
-    showOutfit("outfitShoes","鞋子",shoe);
-
+function clearForm() {
+  clothNameInput.value = "";
+  clothTagInput.value = "";
+  clothImageInput.value = "";
 }
 
-function randomItem(arr){
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-if(arr.length === 0) return null;
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = reject;
 
-return arr[Math.floor(Math.random()*arr.length)];
-
+    reader.readAsDataURL(file);
+  });
 }
-
-function showOutfit(id,label,item){
-
-const div = document.getElementById(id);
-
-if(!item){
-div.innerHTML = `${label}：无`;
-return;
-}
-
-let imgHTML = "";
-
-if(item.image){
-imgHTML = `<img src="${item.image}">`;
-}
-
-div.innerHTML = `
-${imgHTML}
-
-<p>${label}：${item.name}</p>
-`;
-
-}
-
-function saveClothes(){
-
-localStorage.setItem("clothes",JSON.stringify(clothes));
-
-}
-renderClothes();

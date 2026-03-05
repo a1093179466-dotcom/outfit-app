@@ -1,60 +1,57 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<title>今日穿搭</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>今日穿搭助手</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
-
 <body>
+  <header>
+    <h1>今日穿搭助手</h1>
+  </header>
 
-<header>
-  <h1>今日穿搭助手</h1>
-</header>
+  <div class="container">
+    <!-- 左侧：衣柜 -->
+    <section class="wardrobe panel">
+      <h2>我的衣柜</h2>
 
-<div class="container">
+      <div class="add-form">
+        <input id="clothName" type="text" placeholder="衣服名称（必填）" />
 
-  <!-- 左侧衣柜 -->
-    <div class="wardrobe">
-        <h2>我的衣柜</h2>
-        <div class="add-form">
-        <input id="clothName" type="text" placeholder="衣服名称">
-        <input id="clothImage" type="file">
-        <input id="clothTag" type="text" placeholder="tag（例如：上衣/裤子/鞋）">
-        <button id="addClothBtn">添加衣服</button>
-        </div>
-        <hr>
-        <div id="clothList"></div>
-    </div>
+        <input id="clothImage" type="file" accept="image/*" />
 
+        <!-- 先保留简单tag，后续升级复杂TAG -->
+        <input id="clothTag" list="tagOptions" type="text" placeholder="tag（上衣 / 裤子 / 鞋子）" />
+        <datalist id="tagOptions">
+          <option value="上衣"></option>
+          <option value="裤子"></option>
+          <option value="鞋子"></option>
+        </datalist>
 
-  <!-- 中间操作 -->
-  <div class="control">
+        <button id="addClothBtn" type="button">添加衣服</button>
+      </div>
 
-    <button id="generateBtn">
-      生成今日穿搭
-    </button>
+      <hr />
 
+      <div id="clothList" class="cloth-grid"></div>
+    </section>
+
+    <!-- 中间：操作 -->
+    <section class="control panel">
+      <button id="generateBtn" type="button" class="primary-btn">生成今日穿搭</button>
+    </section>
+
+    <!-- 右侧：结果 -->
+    <section class="result panel">
+      <h2>今日穿搭</h2>
+
+      <div id="outfitTop" class="outfit-card">上衣：--</div>
+      <div id="outfitPants" class="outfit-card">裤子：--</div>
+      <div id="outfitShoes" class="outfit-card">鞋子：--</div>
+    </section>
   </div>
 
-
-  <!-- 右侧结果 -->
-  <div class="result">
-    <h2>今日穿搭</h2>
-    <div id="outfitTop" class="outfit-card">
-    上衣：--
-    </div>
-
-    <div id="outfitPants" class="outfit-card">
-    裤子：--
-    </div>
-
-    <div id="outfitShoes" class="outfit-card">
-    鞋子：--
-    </div>
-</div>
-
-<script src="js/app.js"></script>
-
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -1,132 +1,192 @@
-body{
-margin:0;
-font-family:Arial;
-background:#f5f6fa;
+* {
+  box-sizing: border-box;
 }
 
-header{
-background:#4a69bd;
-color:white;
-padding:15px;
-text-align:center;
+body {
+  margin: 0;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  background: #f5f6fa;
+  color: #222;
 }
 
-.container{
-display:flex;
-gap:20px;
-padding:20px;
+header {
+  background: #4a69bd;
+  color: #fff;
+  padding: 14px 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* 三栏布局 */
-
-.wardrobe{
-width:40%;
+header h1 {
+  margin: 0;
+  font-size: 24px;
 }
 
-.control{
-width:20%;
-display:flex;
-align-items:center;
-justify-content:center;
+.container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  align-items: flex-start;
 }
 
-.result{
-width:40%;
+.panel {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* 卡片容器 */
-
-.wardrobe,
-.control,
-.result{
-background:white;
-padding:20px;
-border-radius:12px;
-box-shadow:0 4px 10px rgba(0,0,0,0.08);
+.wardrobe {
+  width: 42%;
 }
 
-/* 添加表单 */
-
-.add-form{
-display:flex;
-flex-direction:column;
-gap:8px;
-margin-bottom:15px;
+.control {
+  width: 16%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
 }
 
-input{
-padding:8px;
-border-radius:6px;
-border:1px solid #ccc;
+.result {
+  width: 42%;
 }
 
-button{
-padding:10px;
-background:#4a69bd;
-color:white;
-border:none;
-border-radius:8px;
-cursor:pointer;
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-button:hover
-
-/* 衣服卡片网格 */
-
-#clothList{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:10px;
+.add-form input {
+  padding: 10px;
+  border: 1px solid #d9dbe3;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
 }
 
-.cloth-card{
-border:1px solid #eee;
-border-radius:10px;
-padding:10px;
-background:#fafafa;
+.add-form input:focus {
+  border-color: #4a69bd;
+  box-shadow: 0 0 0 3px rgba(74, 105, 189, 0.12);
 }
 
-.cloth-card img{
-width:100%;
-height:120px;
-object-fit:cover;
-border-radius:6px;
+button {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
 }
 
-.cloth-name{
-font-weight:bold;
-margin-top:5px;
+button:hover {
+  transform: translateY(-1px);
 }
 
-.tag{
-display:inline-block;
-background:#6ab04c;
-color:white;
-padding:2px 6px;
-border-radius:6px;
-font-size:12px;
-margin-top:4px;
+.primary-btn,
+#addClothBtn {
+  background: #4a69bd;
+  color: #fff;
+  padding: 10px 12px;
 }
 
-.delete-btn{
-margin-top:6px;
-background:#eb4d4b;
+.primary-btn:hover,
+#addClothBtn:hover {
+  background: #3f5ca9;
 }
 
-/* 今日穿搭展示 */
-
-.outfit-card{
-border:1px solid #eee;
-padding:10px;
-border-radius:10px;
-margin-bottom:10px;
-background:#fafafa;
+.delete-btn {
+  margin-top: 8px;
+  background: #eb4d4b;
+  color: #fff;
+  padding: 7px 10px;
+  width: 100%;
 }
 
-.outfit-card img{
-width:100%;
-height:120px;
-object-fit:cover;
-border-radius:6px;
-margin-bottom:5px;
+.delete-btn:hover {
+  background: #d8403e;
+}
+
+.cloth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.cloth-card {
+  border: 1px solid #ececf2;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.cloth-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 8px;
+  background: #eee;
+}
+
+.cloth-name {
+  font-weight: bold;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+.tag {
+  display: inline-block;
+  background: #6ab04c;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.outfit-card {
+  border: 1px solid #ececf2;
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 12px;
+  min-height: 60px;
+}
+
+.outfit-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 8px;
+  background: #eee;
+}
+
+.outfit-card p {
+  margin: 0;
+}
+
+.empty-tip {
+  color: #888;
+  text-align: center;
+  padding: 12px;
+}
+
+@media (max-width: 900px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .wardrobe,
+  .control,
+  .result {
+    width: 100%;
+  }
+
+  .control {
+    min-height: auto;
+  }
 }
