@@ -3,8 +3,10 @@ import { generateOutfit } from "./outfit.js";
 import { renderWardrobe, renderOutfit } from "./ui.js";
 
 const clothNameInput = document.getElementById("clothName");
-const clothTagInput = document.getElementById("clothTag");
 const clothImageInput = document.getElementById("clothImage");
+const clothTypeSelect = document.getElementById("clothType");
+const clothVersatileInput = document.getElementById("clothVersatile");
+
 const addClothBtn = document.getElementById("addClothBtn");
 const generateBtn = document.getElementById("generateBtn");
 
@@ -28,7 +30,9 @@ function refreshWardrobeView() {
 
 function handleAddCloth() {
   const name = clothNameInput.value.trim();
-  const tag = clothTagInput.value.trim();
+  const type = clothTypeSelect.value;
+  const versatile = clothVersatileInput.checked;
+  const seasons = getSelectedSeasons();
   const file = clothImageInput.files?.[0];
 
   if (!name) {
@@ -36,16 +40,15 @@ function handleAddCloth() {
     return;
   }
 
-  if (!tag) {
-    alert("tag 不能为空（先用：上衣 / 裤子 / 鞋子）");
+  if (seasons.length < 1 || seasons.length > 2) {
+    alert("季节标签必须选择 1~2 个");
     return;
   }
 
-  // 有图片就先读取，再添加；无图片直接添加
   if (file) {
     readFileAsDataURL(file)
       .then((imageDataUrl) => {
-        addCloth({ name, tag, image: imageDataUrl });
+        addCloth({ name, type, seasons, versatile, image: imageDataUrl });
         clearForm();
         refreshWardrobeView();
       })
@@ -55,7 +58,7 @@ function handleAddCloth() {
       });
   } else {
     try {
-      addCloth({ name, tag, image: null });
+      addCloth({ name, type, seasons, versatile, image: null });
       clearForm();
       refreshWardrobeView();
     } catch (error) {
@@ -70,19 +73,27 @@ function handleGenerateOutfit() {
   renderOutfit(outfit);
 }
 
+function getSelectedSeasons() {
+  const checked = document.querySelectorAll('input[name="season"]:checked');
+  return Array.from(checked).map((el) => el.value);
+}
+
 function clearForm() {
   clothNameInput.value = "";
-  clothTagInput.value = "";
   clothImageInput.value = "";
+  clothTypeSelect.value = "jk_set";
+  clothVersatileInput.checked = false;
+
+  document.querySelectorAll('input[name="season"]').forEach((cb) => {
+    cb.checked = false;
+  });
 }
 
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onload = (e) => resolve(e.target.result);
     reader.onerror = reject;
-
     reader.readAsDataURL(file);
   });
 }

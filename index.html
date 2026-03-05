@@ -21,13 +21,31 @@
 
         <input id="clothImage" type="file" accept="image/*" />
 
-        <!-- 先保留简单tag，后续升级复杂TAG -->
-        <input id="clothTag" list="tagOptions" type="text" placeholder="tag（上衣 / 裤子 / 鞋子）" />
-        <datalist id="tagOptions">
-          <option value="上衣"></option>
-          <option value="裤子"></option>
-          <option value="鞋子"></option>
-        </datalist>
+        <!-- 类型（单选） -->
+        <label for="clothType"><strong>衣服类型</strong></label>
+        <select id="clothType">
+          <option value="jk_set">JK套装</option>
+          <option value="daily_set">日常套装</option>
+          <option value="skirt">单裙子</option>
+          <option value="top">单上衣</option>
+          <option value="socks">袜子</option>
+          <option value="shoes">鞋子</option>
+        </select>
+
+        <!-- 季节（1~2个） -->
+        <div class="season-group">
+          <div><strong>季节（请选择 1~2 个）</strong></div>
+          <label><input type="checkbox" name="season" value="spring"> 春</label>
+          <label><input type="checkbox" name="season" value="summer"> 夏</label>
+          <label><input type="checkbox" name="season" value="autumn"> 秋</label>
+          <label><input type="checkbox" name="season" value="winter"> 冬</label>
+        </div>
+
+        <!-- 百搭 -->
+        <label class="inline-check">
+          <input id="clothVersatile" type="checkbox">
+          百搭（可进入混搭池）
+        </label>
 
         <button id="addClothBtn" type="button">添加衣服</button>
       </div>
@@ -46,9 +64,12 @@
     <section class="result panel">
       <h2>今日穿搭</h2>
 
-      <div id="outfitTop" class="outfit-card">上衣：--</div>
-      <div id="outfitPants" class="outfit-card">裤子：--</div>
+      <div id="outfitMain1" class="outfit-card">主件1：--</div>
+      <div id="outfitMain2" class="outfit-card">主件2：--</div>
       <div id="outfitShoes" class="outfit-card">鞋子：--</div>
+      <div id="outfitSocks" class="outfit-card">袜子：--</div>
+
+      <p class="empty-tip" id="outfitHint">当前规则：套装 + 鞋袜 或 上衣 + 裙子 + 鞋袜（基础版）</p>
     </section>
   </div>
 

@@ -190,3 +190,45 @@ button:hover {
     min-height: auto;
   }
 }
+
+.add-form select {
+  padding: 10px;
+  border: 1px solid #d9dbe3;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  background: white;
+}
+
+.add-form select:focus {
+  border-color: #4a69bd;
+  box-shadow: 0 0 0 3px rgba(74, 105, 189, 0.12);
+}
+
+.season-group {
+  border: 1px solid #ececf2;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.season-group label {
+  margin-right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.meta-line {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #444;
+}
