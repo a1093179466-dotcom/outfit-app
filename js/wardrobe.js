@@ -106,3 +106,28 @@ export function clearAllClothes() {
   clothes = [];
   saveClothesToStorage(clothes);
 }
+
+export function getClothById(id) {
+  return clothes.find(c => c.id === id) || null;
+}
+
+export function updateClothById(id, patch) {
+  const idx = clothes.findIndex(c => c.id === id);
+  if (idx === -1) return;
+
+  const old = clothes[idx];
+  const next = { ...old, ...patch };
+
+  // seasons 仍然限制 1~2 个
+  if (patch.seasons) {
+    const normalized = normalizeSeasons(patch.seasons);
+    if (normalized.length < 1 || normalized.length > 2) {
+      throw new Error("季节标签必须选择 1~2 个");
+    }
+    next.seasons = normalized;
+  }
+
+  clothes[idx] = next;
+  saveClothesToStorage(clothes);
+}
+

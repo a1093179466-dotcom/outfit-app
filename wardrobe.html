@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>衣柜详情</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>衣柜详情</h1>
+  </header>
+
+  <div class="container container-detail">
+    <section class="panel wardrobe-detail">
+      <div class="detail-toolbar">
+        <a class="link-btn" href="./index.html">← 返回主页</a>
+
+        <div class="filters">
+          <input id="qName" class="filter-input" type="text" placeholder="搜索名称…" />
+
+          <select id="fType" class="filter-select">
+            <option value="">全部类型</option>
+            <option value="jk_set">JK套装</option>
+            <option value="daily_set">日常套装</option>
+            <option value="skirt">单裙子</option>
+            <option value="top">单上衣</option>
+            <option value="socks">袜子</option>
+            <option value="shoes">鞋子</option>
+          </select>
+
+          <select id="fSeason" class="filter-select">
+            <option value="">全部季节</option>
+            <option value="spring">春</option>
+            <option value="summer">夏</option>
+            <option value="autumn">秋</option>
+            <option value="winter">冬</option>
+          </select>
+
+          <label class="inline-check">
+            <input id="fVersatile" type="checkbox" />
+            仅百搭
+          </label>
+
+          <label class="inline-check">
+            <input id="groupByType" type="checkbox" checked />
+            按类型分组
+          </label>
+        </div>
+      </div>
+
+      <div id="detailList" class="detail-list"></div>
+    </section>
+
+    <!-- 右侧编辑抽屉 -->
+    <aside class="panel editor" id="editor" aria-hidden="true">
+      <h2>编辑衣服</h2>
+
+      <div class="editor-body">
+        <div id="editorPreview" class="editor-preview empty-tip">请选择一件衣服</div>
+
+        <div class="add-form">
+          <input id="eName" type="text" placeholder="衣服名称" />
+
+          <label for="eType"><strong>衣服类型</strong></label>
+          <select id="eType">
+            <option value="jk_set">JK套装</option>
+            <option value="daily_set">日常套装</option>
+            <option value="skirt">单裙子</option>
+            <option value="top">单上衣</option>
+            <option value="socks">袜子</option>
+            <option value="shoes">鞋子</option>
+          </select>
+
+          <div class="season-group">
+            <div><strong>季节（1~2 个）</strong></div>
+            <label><input type="checkbox" name="eSeason" value="spring"> 春</label>
+            <label><input type="checkbox" name="eSeason" value="summer"> 夏</label>
+            <label><input type="checkbox" name="eSeason" value="autumn"> 秋</label>
+            <label><input type="checkbox" name="eSeason" value="winter"> 冬</label>
+          </div>
+
+          <label class="inline-check">
+            <input id="eVersatile" type="checkbox">
+            百搭
+          </label>
+
+          <label class="inline-check">
+            替换图片：
+            <input id="eImage" type="file" accept="image/*">
+          </label>
+
+          <button id="saveBtn" type="button" class="primary-btn">保存修改</button>
+          <button id="deleteBtn" type="button" class="delete-btn">删除这件衣服</button>
+        </div>
+
+        <div class="empty-tip" id="editorHint"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="js/wardrobe_page.js"></script>
+</body>
+</html>
