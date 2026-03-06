@@ -19,20 +19,31 @@ def get_clothes(request: Request):
 @router.post("", response_model=ClothOut)
 def post_cloth(payload: ClothCreate, request: Request):
     base_url = str(request.base_url).rstrip("/")
-    return cloth_service.create_cloth(payload.name, payload.type, payload.seasons, payload.versatile, base_url=base_url)
+    return cloth_service.create_cloth(
+    payload.name, payload.type, payload.seasons, payload.versatile,
+    base_url=base_url,
+    category=payload.category,
+    layer=payload.layer,
+    features=payload.features,
+    versatile_level=payload.versatile_level,
+)
 
 
 @router.put("/{cloth_id}", response_model=ClothOut)
 def put_cloth(cloth_id: str, payload: ClothUpdate, request: Request):
     base_url = str(request.base_url).rstrip("/")
     updated = cloth_service.update_cloth(
-        cloth_id,
-        name=payload.name,
-        type_=payload.type,
-        seasons=payload.seasons,
-        versatile=payload.versatile,
-        base_url=base_url,
-    )
+    cloth_id,
+    name=payload.name,
+    type_=payload.type,
+    seasons=payload.seasons,
+    versatile=payload.versatile,
+    category=payload.category,
+    layer=payload.layer,
+    features=payload.features,
+    versatile_level=payload.versatile_level,
+    base_url=base_url,
+    )   
     if not updated:
         raise HTTPException(status_code=404, detail="Cloth not found")
     return updated

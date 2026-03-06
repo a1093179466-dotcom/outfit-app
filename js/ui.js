@@ -43,6 +43,7 @@ export function renderWardrobe(clothes, { onDelete }) {
  * - 旧版页面：outfitTop/outfitPants/outfitShoes
  */
 export function renderOutfit(result) {
+  renderOutfitCard("outfitOuter", "外搭", result?.outer ?? null);
   const hasNew =
     document.getElementById("outfitMain1") ||
     document.getElementById("outfitMain2") ||

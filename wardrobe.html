@@ -63,6 +63,9 @@
           <input id="eName" type="text" placeholder="衣服名称" />
 
           <label for="eType"><strong>衣服类型</strong></label>
+          <label for="eCategory"><strong>类别（category）</strong></label>
+          
+
           <select id="eType">
             <option value="jk_set">JK套装</option>
             <option value="daily_set">日常套装</option>
@@ -71,7 +74,36 @@
             <option value="socks">袜子</option>
             <option value="shoes">鞋子</option>
           </select>
+          <select id="eCategory">
+            <option value="outer">外搭</option>
+            <option value="top">上衣</option>
+            <option value="skirt">裙子</option>
+            <option value="dress">连衣裙/套装</option>
+            <option value="shoes">鞋子</option>
+            <option value="socks">袜子</option>
+           </select>
+          <label for="eLayer"><strong>层级（layer）</strong></label>
+            <select id="eLayer">
+              <option value="inner">内搭</option>
+              <option value="outer">外搭</option>
+              <option value="none">无</option>
+            </select>
 
+            <label for="eVLevel"><strong>百搭等级</strong></label>
+            <select id="eVLevel">
+              <option value="0">普通</option>
+              <option value="1">较百搭</option>
+              <option value="2">非常百搭</option>
+            </select>
+
+            <div class="season-group">
+              <div><strong>特征（features）</strong></div>
+              <label><input type="checkbox" name="eFeature" value="strappy"> 吊带</label>
+              <label><input type="checkbox" name="eFeature" value="cardigan"> 开衫</label>
+              <label><input type="checkbox" name="eFeature" value="sun_protection"> 防晒衣</label>
+              <label><input type="checkbox" name="eFeature" value="thick_outerwear"> 厚外套</label>
+              <label><input type="checkbox" name="eFeature" value="tshirt"> T恤</label>
+            </div>
           <div class="season-group">
             <div><strong>季节（1~2 个）</strong></div>
             <label><input type="checkbox" name="eSeason" value="spring"> 春</label>

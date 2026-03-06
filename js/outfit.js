@@ -8,42 +8,51 @@ function filterBySeason(clothes, season) {
   return clothes.filter(c => Array.isArray(c.seasons) && c.seasons.includes(season));
 }
 
-/**
- * season: "spring" | "summer" | "autumn" | "winter" | ""(不过滤)
- */
+function chooseStructure(hasDress, hasMix) {
+  if (hasDress && hasMix) return Math.random() < 0.5 ? "dress" : "mix";
+  if (hasDress) return "dress";
+  return "mix";
+}
+
 export function generateOutfit(clothes, season = "") {
   const pool = filterBySeason(clothes, season);
 
-  const jkSets = pool.filter((c) => c.type === "jk_set");
-  const dailySets = pool.filter((c) => c.type === "daily_set");
-  const tops = pool.filter((c) => c.type === "top");
-  const skirts = pool.filter((c) => c.type === "skirt");
-  const shoesList = pool.filter((c) => c.type === "shoes");
-  const socksList = pool.filter((c) => c.type === "socks");
+  const dresses = pool.filter(c => c.category === "dress");
+  const inners = pool.filter(c => c.category === "top" && c.layer === "inner");
+  const skirts = pool.filter(c => c.category === "skirt");
+  const outers = pool.filter(c => c.category === "outer" && c.layer === "outer");
+  const shoesList = pool.filter(c => c.category === "shoes");
+  const socksList = pool.filter(c => c.category === "socks");
 
-  const allSets = [...jkSets, ...dailySets];
-
-  const canUseSet = allSets.length > 0;
-  const canUseMix = tops.length > 0 && skirts.length > 0;
+  const needOuter = ["spring", "autumn", "winter"].includes(season);
+  const optionalOuter = season === "summer"; // 50% 概率加外搭
 
   const shoes = randomItem(shoesList);
   const socks = randomItem(socksList);
 
-  if (canUseSet && canUseMix) {
-    const useSet = Math.random() < 0.5;
-    if (useSet) {
-      return { main1: randomItem(allSets), main2: null, shoes, socks };
-    }
-    return { main1: randomItem(tops), main2: randomItem(skirts), shoes, socks };
+  const hasDress = dresses.length > 0;
+  const hasMix = inners.length > 0 && skirts.length > 0;
+
+  const mode = chooseStructure(hasDress, hasMix);
+
+  let main1 = null;
+  let main2 = null;
+
+  if (mode === "dress") {
+    main1 = randomItem(dresses);
+    main2 = null;
+  } else {
+    main1 = randomItem(inners);
+    main2 = randomItem(skirts);
   }
 
-  if (canUseSet) {
-    return { main1: randomItem(allSets), main2: null, shoes, socks };
+  let outer = null;
+  if (needOuter) {
+    outer = randomItem(outers);
+  } else if (optionalOuter) {
+    if (Math.random() < 0.5) outer = randomItem(outers);
   }
 
-  if (tops.length > 0 || skirts.length > 0) {
-    return { main1: randomItem(tops), main2: randomItem(skirts), shoes, socks };
-  }
-
-  return { main1: null, main2: null, shoes, socks };
+  // 返回统一结构：main1/main2 + outer + shoes + socks
+  return { main1, main2, outer, shoes, socks, season, mode };
 }
