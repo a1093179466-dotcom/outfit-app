@@ -95,3 +95,22 @@ export async function apiDeletePairRule(ruleId) {
   }
   return res.json();
 }
+
+// Presets APIs
+export async function apiCreatePreset(payload) {
+  return requestJson("/api/presets", { method: "POST", body: payload });
+}
+
+export async function apiListPresets(season = "") {
+  const qs = season ? `?season=${encodeURIComponent(season)}` : "";
+  return requestJson(`/api/presets${qs}`, { method: "GET" });
+}
+
+export async function apiDeletePreset(id) {
+  const res = await fetch(`${API_BASE}/api/presets/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API DELETE /api/presets/${id} failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}

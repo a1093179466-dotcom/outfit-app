@@ -46,10 +46,19 @@
       <h2>当前穿搭</h2>
       <div id="currentOutfit" class="history-item"></div>
 
-      <div class="add-form" style="margin-top: 10px;">
-        <button id="saveHistoryBtn" type="button" class="primary-btn">保存到历史</button>
-        <button id="clearOutfitBtn" type="button" class="delete-btn">清空当前穿搭</button>
-      </div>
+    <div class="add-form" style="margin-top: 10px;">
+      <textarea id="presetNote" rows="2" placeholder="方案备注（可选）"></textarea>
+
+      <button id="savePresetBtn" type="button" class="primary-btn">保存为搭配方案</button>
+      <button id="loadPresetBtn" type="button" class="primary-btn">随机加载一个方案</button>
+
+      <button id="clearOutfitBtn" type="button" class="delete-btn">清空当前穿搭</button>
+    </div>
+
+<div style="margin-top: 10px;">
+  <h3>当前季节方案</h3>
+  <div id="presetList" class="history-list"></div>
+</div>
     </section>
 
     <!-- 右侧：树形候选（按槽位分组） -->

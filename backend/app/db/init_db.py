@@ -46,6 +46,7 @@ def init_db() -> None:
         conn.execute(DDL_CLOTHES)
         conn.execute(DDL_OUTFITS)
         conn.execute(DDL_PAIR_RULES)
+        conn.execute(DDL_PRESETS)
         _ensure_columns(conn)
         conn.commit()
     finally:
@@ -60,5 +61,15 @@ CREATE TABLE IF NOT EXISTS pair_rules (
   note TEXT,
   created_at INTEGER NOT NULL,
   UNIQUE(a_id, b_id)
+);
+"""
+
+DDL_PRESETS = """
+CREATE TABLE IF NOT EXISTS outfit_presets (
+  id TEXT PRIMARY KEY,
+  season TEXT NOT NULL,        -- spring/summer/autumn/winter
+  items TEXT NOT NULL,         -- JSON array of cloth ids
+  note TEXT,
+  created_at INTEGER NOT NULL
 );
 """
