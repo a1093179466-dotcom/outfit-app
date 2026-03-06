@@ -1,4 +1,5 @@
 // js/app.js
+
 import {
   getClothes,
   initWardrobeFromApi,
@@ -17,7 +18,7 @@ const clothNameInput = document.getElementById("clothName");
 const clothImageInput = document.getElementById("clothImage");
 const clothTypeSelect = document.getElementById("clothType");
 const clothVersatileInput = document.getElementById("clothVersatile");
-
+const seasonSelect = document.getElementById("seasonSelect");
 // 按钮
 const addClothBtn = document.getElementById("addClothBtn");
 const generateBtn = document.getElementById("generateBtn");
@@ -100,19 +101,26 @@ async function handleAddCloth() {
 
 function handleGenerateOutfit() {
   const clothes = getClothes();
-  const outfit = generateOutfit(clothes);
+  const season = seasonSelect ? seasonSelect.value : "";
+  const outfit = generateOutfit(clothes, season);
 
-  console.log("generateOutfit result:", outfit);
+  console.log("generateOutfit result:", outfit, "season:", season);
   renderOutfit(outfit);
 
-  const hint = document.getElementById("outfitHint");
-  if (hint) hint.textContent = "已生成：" + new Date().toLocaleTimeString();
+  // 更新 currentOutfitIds（你已有逻辑就保持）
   const ids = [];
   if (outfit.main1?.id) ids.push(outfit.main1.id);
   if (outfit.main2?.id) ids.push(outfit.main2.id);
   if (outfit.shoes?.id) ids.push(outfit.shoes.id);
   if (outfit.socks?.id) ids.push(outfit.socks.id);
   currentOutfitIds = ids;
+
+  const hint = document.getElementById("outfitHint");
+  if (hint) {
+    hint.textContent = season
+      ? `按季节生成：${season}（${new Date().toLocaleTimeString()}）`
+      : `已生成（不过滤）：${new Date().toLocaleTimeString()}`;
+  }
 }
 
 function getSelectedSeasons() {

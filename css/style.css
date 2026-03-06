@@ -43,9 +43,18 @@ header h1 {
 .control {
   width: 16%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;   /* ✅ 纵向排列 */
+  align-items: stretch;     /* ✅ 让子元素撑满宽度 */
+  justify-content: flex-start;
+  gap: 12px;                /* ✅ 表单和按钮间距 */
   min-height: 220px;
+}
+
+/* ✅ 让 control 里的表单和按钮占满宽度 */
+.control .add-form,
+.control button,
+.control select {
+  width: 100%;
 }
 
 .result {
