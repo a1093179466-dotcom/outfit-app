@@ -125,11 +125,42 @@
           <button id="saveBtn" type="button" class="primary-btn">保存修改</button>
           <button id="deleteBtn" type="button" class="delete-btn">删除这件衣服</button>
         </div>
+        <hr />
+    <h2>搭配规则（穿搭图）</h2>
 
-        <div class="empty-tip" id="editorHint"></div>
+    <div class="add-form">
+      <label for="pairCategory"><strong>按类别筛选候选</strong></label>
+      <select id="pairCategory">
+        <option value="">全部</option>
+        <option value="outer">外搭</option>
+        <option value="top">上衣（内搭/外搭都算）</option>
+        <option value="skirt">裙子</option>
+        <option value="pants">裤子</option>
+        <option value="dress">连衣裙/套装</option>
+        <option value="shoes">鞋子</option>
+        <option value="socks">袜子</option>
+      </select>
+
+      <div class="pair-actions">
+        <button id="addAllowBtn" type="button" class="primary-btn">添加为 ✅允许</button>
+        <button id="addDenyBtn" type="button" class="delete-btn">添加为 ❌互斥</button>
       </div>
-    </aside>
-  </div>
+
+      <div class="empty-tip" id="pairTip">步骤：先在候选区点选一件衣服，再点“允许/互斥”</div>
+    </div>
+
+    <h3>候选衣服（点选一件）</h3>
+    <div id="pairCandidates" class="detail-grid"></div>
+
+    <h3>已设置：✅允许</h3>
+    <div id="pairAllowList" class="history-list"></div>
+
+    <h3>已设置：❌互斥</h3>
+    <div id="pairDenyList" class="history-list"></div>
+            <div class="empty-tip" id="editorHint"></div>
+          </div>
+        </aside>
+      </div>
 
   <script type="module" src="js/wardrobe_page.js"></script>
 </body>

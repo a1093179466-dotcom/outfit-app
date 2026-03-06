@@ -73,3 +73,25 @@ export async function apiDeleteOutfit(id) {
   }
   return res.json();
 }
+
+// Pair rules APIs
+export async function apiListPairRules(clothId) {
+  return requestJson(`/api/pair-rules?cloth_id=${encodeURIComponent(clothId)}`, { method: "GET" });
+}
+
+export async function apiUpsertPairRule(clothId, payload) {
+  // payload: { other_id, rule: "allow"|"deny", note? }
+  return requestJson(`/api/pair-rules/${encodeURIComponent(clothId)}`, {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function apiDeletePairRule(ruleId) {
+  const res = await fetch(`${API_BASE}/api/pair-rules/${encodeURIComponent(ruleId)}`, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API DELETE /api/pair-rules/${ruleId} failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}

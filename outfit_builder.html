@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>穿搭工作台</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>穿搭工作台</h1>
+  </header>
+
+  <div class="container container-detail">
+    <!-- 左侧：控制 -->
+    <section class="panel wardrobe-detail" style="width: 35%;">
+      <div class="detail-toolbar">
+        <a class="link-btn" href="./index.html">← 返回主页</a>
+      </div>
+
+      <div class="add-form">
+        <label><strong>季节</strong></label>
+        <select id="seasonSelect">
+          <option value="spring">春</option>
+          <option value="summer">夏</option>
+          <option value="autumn">秋</option>
+          <option value="winter">冬</option>
+        </select>
+
+        <label><strong>从哪一类开始</strong></label>
+        <select id="startSlot">
+          <option value="top">上衣（内搭）</option>
+          <option value="bottom">下装（裙/裤）</option>
+          <option value="outer">外搭</option>
+          <option value="dress">连衣裙/套装</option>
+          <option value="shoes">鞋子</option>
+          <option value="socks">袜子</option>
+        </select>
+
+        <button id="pickStartBtn" type="button" class="primary-btn">帮我选起点</button>
+        <div class="empty-tip" id="statusTip">提示：先选一个起点，然后逐步补全其它部位</div>
+      </div>
+
+      <hr />
+
+      <h2>当前穿搭</h2>
+      <div id="currentOutfit" class="history-item"></div>
+
+      <div class="add-form" style="margin-top: 10px;">
+        <button id="saveHistoryBtn" type="button" class="primary-btn">保存到历史</button>
+        <button id="clearOutfitBtn" type="button" class="delete-btn">清空当前穿搭</button>
+      </div>
+    </section>
+
+    <!-- 右侧：树形候选（按槽位分组） -->
+    <section class="panel editor" style="width: 65%;">
+      <h2>候选推荐</h2>
+
+      <div class="group">
+        <div class="group-title">外搭</div>
+        <div class="pair-actions">
+          <button id="autoOuter" class="primary-btn" type="button">帮我选外搭</button>
+          <button id="clearOuter" class="delete-btn" type="button">清除外搭</button>
+        </div>
+        <div id="candOuter" class="detail-grid"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">上衣（内搭）</div>
+        <div class="pair-actions">
+          <button id="autoTop" class="primary-btn" type="button">帮我选上衣</button>
+          <button id="clearTop" class="delete-btn" type="button">清除上衣</button>
+        </div>
+        <div id="candTop" class="detail-grid"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">下装（裙/裤）</div>
+        <div class="pair-actions">
+          <button id="autoBottom" class="primary-btn" type="button">帮我选下装</button>
+          <button id="clearBottom" class="delete-btn" type="button">清除下装</button>
+        </div>
+        <div id="candBottom" class="detail-grid"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">连衣裙/套装</div>
+        <div class="pair-actions">
+          <button id="autoDress" class="primary-btn" type="button">帮我选连衣裙</button>
+          <button id="clearDress" class="delete-btn" type="button">清除连衣裙</button>
+        </div>
+        <div id="candDress" class="detail-grid"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">鞋子</div>
+        <div class="pair-actions">
+          <button id="autoShoes" class="primary-btn" type="button">帮我选鞋子</button>
+          <button id="clearShoes" class="delete-btn" type="button">清除鞋子</button>
+        </div>
+        <div id="candShoes" class="detail-grid"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">袜子</div>
+        <div class="pair-actions">
+          <button id="autoSocks" class="primary-btn" type="button">帮我选袜子</button>
+          <button id="clearSocks" class="delete-btn" type="button">清除袜子</button>
+        </div>
+        <div id="candSocks" class="detail-grid"></div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/outfit_builder.js"></script>
+</body>
+</html>
