@@ -1,4 +1,12 @@
-import { getClothes, deleteClothById, getClothById, updateClothById } from "./wardrobe.js";
+import {
+  getClothes,
+  deleteClothById,
+  getClothById,
+  updateClothById,
+  initWardrobeFromApi,   // ✅ 加上这个
+} from "./wardrobe.js";
+
+init();
 
 const el = (id) => document.getElementById(id);
 
@@ -25,7 +33,8 @@ let selectedId = null;
 
 init();
 
-function init() {
+async function init() {
+  await initWardrobeFromApi();
   render();
 
   [qName, fType, fSeason, fVersatile, groupByType].forEach(x => {
