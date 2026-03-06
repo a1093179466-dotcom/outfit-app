@@ -8,6 +8,9 @@ import {
 } from "./wardrobe.js";
 import { generateOutfit } from "./outfit.js";
 import { renderWardrobe, renderOutfit } from "./ui.js";
+import { initHistoryUI } from "./history.js";
+
+let currentOutfitIds = [];
 
 // 表单元素
 const clothNameInput = document.getElementById("clothName");
@@ -27,6 +30,17 @@ async function init() {
 
   addClothBtn.addEventListener("click", handleAddCloth);
   generateBtn.addEventListener("click", handleGenerateOutfit);
+  await initHistoryUI({
+  getClothesMap: () => {
+    const m = {};
+    getClothes().forEach(c => (m[c.id] = c));
+    return m;
+  },
+  getCurrentOutfitIds: () => currentOutfitIds,
+  onRestore: (ids) => {
+    restoreOutfitFromHistory(ids);
+  },
+});
 }
 
 function refreshWardrobeView() {
@@ -93,6 +107,12 @@ function handleGenerateOutfit() {
 
   const hint = document.getElementById("outfitHint");
   if (hint) hint.textContent = "已生成：" + new Date().toLocaleTimeString();
+  const ids = [];
+  if (outfit.main1?.id) ids.push(outfit.main1.id);
+  if (outfit.main2?.id) ids.push(outfit.main2.id);
+  if (outfit.shoes?.id) ids.push(outfit.shoes.id);
+  if (outfit.socks?.id) ids.push(outfit.socks.id);
+  currentOutfitIds = ids;
 }
 
 function getSelectedSeasons() {
@@ -106,4 +126,39 @@ function clearForm() {
   clothTypeSelect.value = "jk_set";
   clothVersatileInput.checked = false;
   document.querySelectorAll('input[name="season"]').forEach((cb) => (cb.checked = false));
+}
+
+function restoreOutfitFromHistory(ids) {
+  const clothes = getClothes();
+  const byId = new Map(clothes.map(c => [c.id, c]));
+
+  const picked = (ids || []).map(id => byId.get(id)).filter(Boolean);
+
+  // 按 type 归类
+  const sets = picked.filter(c => c.type === "jk_set" || c.type === "daily_set");
+  const tops = picked.filter(c => c.type === "top");
+  const skirts = picked.filter(c => c.type === "skirt");
+  const shoes = picked.find(c => c.type === "shoes") || null;
+  const socks = picked.find(c => c.type === "socks") || null;
+
+  // 组装成 outfit.js 同款结构
+  const restored = {
+    main1: sets[0] || tops[0] || null,
+    main2: sets.length > 0 ? null : (skirts[0] || null),
+    shoes,
+    socks,
+  };
+
+  // 更新当前穿搭ID（只保存存在的）
+  const newIds = [];
+  if (restored.main1?.id) newIds.push(restored.main1.id);
+  if (restored.main2?.id) newIds.push(restored.main2.id);
+  if (restored.shoes?.id) newIds.push(restored.shoes.id);
+  if (restored.socks?.id) newIds.push(restored.socks.id);
+  currentOutfitIds = newIds;
+
+  renderOutfit(restored);
+
+  const hint = document.getElementById("outfitHint");
+  if (hint) hint.textContent = "已从历史恢复：" + new Date().toLocaleTimeString();
 }

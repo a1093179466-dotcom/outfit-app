@@ -73,6 +73,32 @@
       <div id="outfitSocks" class="outfit-card">袜子：--</div>
 
       <p class="empty-tip" id="outfitHint">当前规则：套装 + 鞋袜 或 上衣 + 裙子 + 鞋袜（基础版）</p>
+
+      <hr />
+      <h2>穿搭历史</h2>
+
+      <div class="add-form">
+        <label>日期
+          <input id="histDate" type="date" />
+        </label>
+
+        <label>评分（1-5）
+          <select id="histRating">
+            <option value="">不评分</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+
+        <textarea id="histNote" rows="2" placeholder="备注（可选）"></textarea>
+
+        <button id="saveHistoryBtn" type="button" class="primary-btn">保存到历史</button>
+      </div>
+
+      <div id="historyList" class="history-list"></div>
     </section>
   </div>
 

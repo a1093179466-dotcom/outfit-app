@@ -56,3 +56,20 @@ export async function apiCreateCloth(payload) {
   // payload: {name, type, seasons, versatile}
   return requestJson("/api/clothes", { method: "POST", body: payload });
 }
+
+export async function apiCreateOutfit(payload) {
+  return requestJson("/api/outfits", { method: "POST", body: payload });
+}
+
+export async function apiListOutfits(limit = 30) {
+  return requestJson(`/api/outfits?limit=${limit}`);
+}
+
+export async function apiDeleteOutfit(id) {
+  const res = await fetch(`${API_BASE}/api/outfits/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API DELETE /api/outfits/${id} failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}

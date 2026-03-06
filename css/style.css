@@ -328,3 +328,66 @@ button:hover {
   margin-bottom: 10px;
   background: #eee;
 }
+
+.history-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  border: 1px solid #ececf2;
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-names {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #333;
+}
+
+.history-note {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #555;
+  white-space: pre-wrap;
+}
+
+textarea {
+  padding: 10px;
+  border: 1px solid #d9dbe3;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+select {
+  padding: 10px;
+  border: 1px solid #d9dbe3;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.history-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+}
+
+.history-actions .primary-btn {
+  flex: 1;
+}
+
+.history-actions .delete-btn {
+  flex: 1;
+}
