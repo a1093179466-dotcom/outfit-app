@@ -1,9 +1,10 @@
 import {
   getClothes,
-  deleteClothById,
   getClothById,
-  updateClothById,
-  initWardrobeFromApi,   // ✅ 加上这个
+  initWardrobeFromApi,
+  remoteUpdateClothById,
+  remoteUploadImage,
+  remoteDeleteClothById,
 } from "./wardrobe.js";
 
 init();
@@ -128,7 +129,7 @@ function openEditor(id) {
   editorHint.textContent = "";
 }
 
-function onSave() {
+async function onSave() {
   if (!selectedId) return;
 
   const name = (eName.value || "").trim();
@@ -146,35 +147,48 @@ function onSave() {
 
   const versatile = eVersatile.checked;
 
-  const file = eImage.files?.[0];
-  if (file) {
-    readFileAsDataURL(file).then((img) => {
-      updateClothById(selectedId, { name, type, seasons, versatile, image: img });
-      editorHint.textContent = "已保存";
-      render();
-      openEditor(selectedId);
-    }).catch(() => {
-      editorHint.textContent = "图片读取失败";
-    });
-  } else {
-    try {
-      updateClothById(selectedId, { name, type, seasons, versatile });
-      editorHint.textContent = "已保存";
-      render();
-      openEditor(selectedId);
-    } catch (e) {
-      editorHint.textContent = e.message || "保存失败";
+  editorHint.textContent = "保存中…";
+
+  try {
+    // 1) 先更新文字/标签信息（写入 DB）
+    await remoteUpdateClothById(selectedId, { name, type, seasons, versatile });
+
+    // 2) 如果有新图片，再上传（写入 DB & 文件）
+    const file = eImage.files?.[0];
+    if (file) {
+      await remoteUploadImage(selectedId, file);
     }
+
+    editorHint.textContent = "已保存 ✅";
+
+    // 重新渲染列表 + 重新打开编辑（刷新预览）
+    render();
+    openEditor(selectedId);
+  } catch (e) {
+    console.error(e);
+    editorHint.textContent = `保存失败：${e.message || e}`;
   }
 }
 
-function onDelete() {
+async function onDelete() {
   if (!selectedId) return;
-  deleteClothById(selectedId);
-  selectedId = null;
-  editorPreview.innerHTML = `<div class="empty-tip">请选择一件衣服</div>`;
-  editorHint.textContent = "已删除";
-  render();
+
+  editorHint.textContent = "删除中…";
+
+  try {
+    await remoteDeleteClothById(selectedId);
+
+    const deletedId = selectedId;
+    selectedId = null;
+
+    editorPreview.innerHTML = `<div class="empty-tip">已删除：${deletedId}</div>`;
+    editorHint.textContent = "已删除 ✅";
+
+    render();
+  } catch (e) {
+    console.error(e);
+    editorHint.textContent = `删除失败：${e.message || e}`;
+  }
 }
 
 function getEditorSeasons() {

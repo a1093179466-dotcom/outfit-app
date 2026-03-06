@@ -1,9 +1,10 @@
 // js/app.js
 import {
-  addCloth,
-  deleteClothById,
   getClothes,
   initWardrobeFromApi,
+  remoteCreateCloth,
+  remoteUploadImage,
+  remoteDeleteClothById,
 } from "./wardrobe.js";
 import { generateOutfit } from "./outfit.js";
 import { renderWardrobe, renderOutfit } from "./ui.js";
@@ -20,12 +21,6 @@ const generateBtn = document.getElementById("generateBtn");
 
 init();
 
-/**
- * 初始化：
- * 1) 从后端读取衣柜（Step A）
- * 2) 渲染衣柜
- * 3) 绑定事件
- */
 async function init() {
   await initWardrobeFromApi();
   refreshWardrobeView();
@@ -36,19 +31,21 @@ async function init() {
 
 function refreshWardrobeView() {
   renderWardrobe(getClothes(), {
-    onDelete: (id) => {
-      // Step A 暂时仍是本地删除（不会影响后端数据）
-      deleteClothById(id);
-      refreshWardrobeView();
+    onDelete: async (id) => {
+      // ✅ B2：主页删除也写入 DB（推荐）
+      try {
+        await remoteDeleteClothById(id);
+        refreshWardrobeView();
+      } catch (e) {
+        console.error(e);
+        alert(`删除失败：${e.message || e}`);
+      }
     },
   });
 }
 
-/**
- * 添加衣服（Step A 版本：仍写本地内存+localStorage）
- * 后续 Step B 会改成：POST /api/clothes + POST /image
- */
-function handleAddCloth() {
+// ✅ B2：新增衣服写 DB（POST），图片走 /image
+async function handleAddCloth() {
   const name = clothNameInput.value.trim();
   const type = clothTypeSelect.value;
   const versatile = clothVersatileInput.checked;
@@ -59,51 +56,43 @@ function handleAddCloth() {
     alert("衣服名称不能为空");
     return;
   }
-
   if (seasons.length < 1 || seasons.length > 2) {
     alert("季节标签必须选择 1~2 个");
     return;
   }
 
-  if (file) {
-    readFileAsDataURL(file)
-      .then((imageDataUrl) => {
-        addCloth({ name, type, seasons, versatile, image: imageDataUrl });
-        clearForm();
-        refreshWardrobeView();
-      })
-      .catch((error) => {
-        console.error(error);
-        alert("图片读取失败，请重试。");
-      });
-  } else {
-    try {
-      addCloth({ name, type, seasons, versatile, image: null });
-      clearForm();
-      refreshWardrobeView();
-    } catch (error) {
-      alert(error.message || "添加失败");
+  addClothBtn.disabled = true;
+  addClothBtn.textContent = "添加中…";
+
+  try {
+    // 1) 先创建衣服记录（拿到 id）
+    const created = await remoteCreateCloth({ name, type, seasons, versatile });
+
+    // 2) 如果选择了图片，再上传图片（返回更新后的 cloth）
+    if (file) {
+      await remoteUploadImage(created.id, file);
     }
+
+    clearForm();
+    refreshWardrobeView();
+  } catch (e) {
+    console.error(e);
+    alert(`添加失败：${e.message || e}`);
+  } finally {
+    addClothBtn.disabled = false;
+    addClothBtn.textContent = "添加衣服";
   }
 }
 
-/**
- * 生成今日穿搭：纯前端逻辑
- * 一定会 console.log，方便你确认是否点击生效
- */
 function handleGenerateOutfit() {
   const clothes = getClothes();
   const outfit = generateOutfit(clothes);
 
-  console.log("generateOutfit result:", outfit); // ✅ 你可以在F12控制台看到
-
+  console.log("generateOutfit result:", outfit);
   renderOutfit(outfit);
 
-  // 可选：给页面一个“有反应”的提示（如果你的主页有 outfitHint）
   const hint = document.getElementById("outfitHint");
-  if (hint) {
-    hint.textContent = "已生成（基础规则）：" + new Date().toLocaleTimeString();
-  }
+  if (hint) hint.textContent = "已生成：" + new Date().toLocaleTimeString();
 }
 
 function getSelectedSeasons() {
@@ -116,17 +105,5 @@ function clearForm() {
   clothImageInput.value = "";
   clothTypeSelect.value = "jk_set";
   clothVersatileInput.checked = false;
-
-  document.querySelectorAll('input[name="season"]').forEach((cb) => {
-    cb.checked = false;
-  });
-}
-
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  document.querySelectorAll('input[name="season"]').forEach((cb) => (cb.checked = false));
 }

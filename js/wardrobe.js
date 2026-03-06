@@ -1,6 +1,12 @@
 // js/wardrobe.js
 import { loadClothesFromStorage, saveClothesToStorage } from "./store.js";
-import { apiListClothes } from "./api_client.js";
+import {
+  apiListClothes,
+  apiCreateCloth,
+  apiUpdateCloth,
+  apiDeleteCloth,
+  apiUploadClothImage
+} from "./api_client.js";
 
 let clothes = [];
 
@@ -111,4 +117,59 @@ export function deleteClothById(id) {
 export function clearAllClothes() {
   clothes = [];
   saveClothesToStorage(clothes);
+}
+
+function normalizeOneFromApi(x) {
+  return {
+    id: x.id,
+    name: x.name,
+    type: x.type,
+    seasons: Array.isArray(x.seasons) ? x.seasons : ["spring"],
+    versatile: !!x.versatile,
+    image: x.image_url || null,
+    createdAt: x.created_at || Date.now(),
+  };
+}
+
+export async function remoteUpdateClothById(id, patch) {
+  // patch: {name?, type?, seasons?, versatile?}
+  const updated = await apiUpdateCloth(id, patch);
+  const normalized = normalizeOneFromApi(updated);
+
+  const idx = clothes.findIndex((c) => c.id === id);
+  if (idx !== -1) clothes[idx] = { ...clothes[idx], ...normalized };
+  else clothes.unshift(normalized);
+
+  saveClothesToStorage(clothes);
+  return clothes[idx] || normalized;
+}
+
+export async function remoteUploadImage(id, file) {
+  const updated = await apiUploadClothImage(id, file);
+  const normalized = normalizeOneFromApi(updated);
+
+  const idx = clothes.findIndex((c) => c.id === id);
+  if (idx !== -1) clothes[idx] = { ...clothes[idx], ...normalized };
+  else clothes.unshift(normalized);
+
+  saveClothesToStorage(clothes);
+  return clothes[idx] || normalized;
+}
+
+export async function remoteDeleteClothById(id) {
+  await apiDeleteCloth(id);
+  clothes = clothes.filter((c) => c.id !== id);
+  saveClothesToStorage(clothes);
+}
+
+export async function remoteCreateCloth(payload) {
+  // 1) 创建衣服（不含图片）
+  const created = await apiCreateCloth(payload);
+  const normalized = normalizeOneFromApi(created);
+
+  // 2) 同步到前端内存
+  clothes.unshift(normalized);
+  saveClothesToStorage(clothes);
+
+  return normalized; // 返回创建好的 cloth（含 id）
 }
