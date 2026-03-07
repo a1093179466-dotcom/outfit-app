@@ -3,114 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>今日穿搭助手</title>
+  <title>今日穿搭</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header>
-    <h1>今日穿搭助手</h1>
+    <h1>今日穿搭</h1>
   </header>
 
   <div class="container">
-    <!-- 左侧：衣柜 -->
-    <section class="wardrobe panel">
+    <!-- 左侧：衣柜预览 -->
+    <section class="panel wardrobe">
       <h2>我的衣柜</h2>
-
-      <div class="add-form">
-        <input id="clothName" type="text" placeholder="衣服名称（必填）" />
-
-        <input id="clothImage" type="file" accept="image/*" />
-
-        <!-- 类型（单选） -->
-        <label for="clothType"><strong>衣服类型</strong></label>
-        <select id="clothType">
-          <option value="jk_set">JK套装</option>
-          <option value="daily_set">日常套装</option>
-          <option value="skirt">单裙子</option>
-          <option value="top">单上衣</option>
-          <option value="socks">袜子</option>
-          <option value="shoes">鞋子</option>
-        </select>
-
-        <!-- 季节（1~2个） -->
-        <div class="season-group">
-          <div><strong>季节（请选择 1~2 个）</strong></div>
-          <label><input type="checkbox" name="season" value="spring"> 春</label>
-          <label><input type="checkbox" name="season" value="summer"> 夏</label>
-          <label><input type="checkbox" name="season" value="autumn"> 秋</label>
-          <label><input type="checkbox" name="season" value="winter"> 冬</label>
-        </div>
-
-        <!-- 百搭 -->
-        <label class="inline-check">
-          <input id="clothVersatile" type="checkbox">
-          百搭（可进入混搭池）
-        </label>
-
-        <button id="addClothBtn" type="button">添加衣服</button>
-      </div>
-
-      <hr />
-
       <div id="clothList" class="cloth-grid"></div>
-      <div class="wardrobe-footer">
+
+      <div class="wardrobe-footer" style="margin-top: 10px;">
         <a class="link-btn" href="./wardrobe.html">进入衣柜详情 →</a>
-</div>
+      </div>
     </section>
 
-    <!-- 中间：操作 -->
-    
-    <section class="control panel">
+    <!-- 中间：控制 -->
+    <section class="panel control">
+      <h2>生成设置</h2>
+
       <div class="add-form">
-        <label for="seasonSelect"><strong>按季节生成</strong></label>
+        <label for="seasonSelect"><strong>按季节过滤</strong></label>
         <select id="seasonSelect">
-          <option value="">不过滤（全部）</option>
           <option value="spring">春</option>
           <option value="summer">夏</option>
-          <option value="autumn">秋</option>
+          <option value="autumn" selected>秋</option>
           <option value="winter">冬</option>
         </select>
+
+        <button id="generateBtn" type="button" class="primary-btn">生成今日穿搭</button>
+
+        <div class="empty-tip" id="outfitHint">提示：现在是完全随机（仅按季节过滤），匹配规则后续再做。</div>
       </div>
-      <a class="link-btn" href="./outfit_builder.html">进入穿搭工作台 →</a>
-      <button id="generateBtn" type="button" class="primary-btn">生成今日穿搭</button>
     </section>
 
-    <!-- 右侧：结果 -->
-    <section class="result panel">
-      <h2>今日穿搭</h2>
-      <div id="outfitOuter" class="outfit-card">外搭：--</div>
-      <div id="outfitMain1" class="outfit-card">主件1：--</div>
-      <div id="outfitMain2" class="outfit-card">主件2：--</div>
-      <div id="outfitShoes" class="outfit-card">鞋子：--</div>
-      <div id="outfitSocks" class="outfit-card">袜子：--</div>
+    <!-- 右侧：穿搭结果 -->
+    <section class="panel result">
+      <h2>今日穿搭结果</h2>
 
-      <p class="empty-tip" id="outfitHint">当前规则：套装 + 鞋袜 或 上衣 + 裙子 + 鞋袜（基础版）</p>
-
-      <hr />
-      <h2>穿搭历史</h2>
-
-      <div class="add-form">
-        <label>日期
-          <input id="histDate" type="date" />
-        </label>
-
-        <label>评分（1-5）
-          <select id="histRating">
-            <option value="">不评分</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </label>
-
-        <textarea id="histNote" rows="2" placeholder="备注（可选）"></textarea>
-
-        <button id="saveHistoryBtn" type="button" class="primary-btn">保存到历史</button>
+      <div class="detail-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div id="outfitMain1" class="cloth-card">主件1：--</div>
+        <div id="outfitMain2" class="cloth-card">主件2：--</div>
+        <div id="outfitBottom" class="cloth-card">下装：--</div>
+        <div id="outfitSocks" class="cloth-card">袜子：--</div>
+        <div id="outfitShoes" class="cloth-card">鞋子：--</div>
       </div>
-
-      <div id="historyList" class="history-list"></div>
     </section>
   </div>
 

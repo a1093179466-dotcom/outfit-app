@@ -12,6 +12,7 @@
   </header>
 
   <div class="container container-detail">
+    <!-- 左侧：衣柜列表 -->
     <section class="panel wardrobe-detail">
       <div class="detail-toolbar">
         <a class="link-btn" href="./index.html">← 返回主页</a>
@@ -19,12 +20,14 @@
         <div class="filters">
           <input id="qName" class="filter-input" type="text" placeholder="搜索名称…" />
 
+          <!-- 你如果不想保留 type 过滤，可以删掉这一整段 select，且在 wardrobe_page.js 里移除 fType 逻辑 -->
           <select id="fType" class="filter-select">
-            <option value="">全部类型</option>
+            <option value="">全部（旧type）</option>
             <option value="jk_set">JK套装</option>
             <option value="daily_set">日常套装</option>
-            <option value="skirt">单裙子</option>
-            <option value="top">单上衣</option>
+            <option value="top">上衣</option>
+            <option value="skirt">裙子</option>
+            <option value="pants">裤子</option>
             <option value="socks">袜子</option>
             <option value="shoes">鞋子</option>
           </select>
@@ -38,13 +41,8 @@
           </select>
 
           <label class="inline-check">
-            <input id="fVersatile" type="checkbox" />
-            仅百搭
-          </label>
-
-          <label class="inline-check">
             <input id="groupByType" type="checkbox" checked />
-            按类型分组
+            按类别分组
           </label>
         </div>
       </div>
@@ -52,7 +50,7 @@
       <div id="detailList" class="detail-list"></div>
     </section>
 
-    <!-- 右侧编辑抽屉 -->
+    <!-- 右侧：编辑抽屉 -->
     <aside class="panel editor" id="editor" aria-hidden="true">
       <h2>编辑衣服</h2>
 
@@ -62,50 +60,19 @@
         <div class="add-form">
           <input id="eName" type="text" placeholder="衣服名称" />
 
-          <label for="eType"><strong>衣服类型</strong></label>
-          <label for="eCategory"><strong>类别（category）</strong></label>
-          
-
-          <select id="eType">
+          <label for="eKind"><strong>类别</strong></label>
+          <select id="eKind">
             <option value="jk_set">JK套装</option>
             <option value="daily_set">日常套装</option>
-            <option value="skirt">单裙子</option>
-            <option value="top">单上衣</option>
+            <option value="outer">外搭</option>
+            <option value="inner">内搭</option>
+            <option value="bottom">下装</option>
             <option value="socks">袜子</option>
             <option value="shoes">鞋子</option>
           </select>
-          <select id="eCategory">
-            <option value="outer">外搭</option>
-            <option value="top">上衣</option>
-            <option value="skirt">裙子</option>
-            <option value="dress">连衣裙/套装</option>
-            <option value="shoes">鞋子</option>
-            <option value="socks">袜子</option>
-           </select>
-          <label for="eLayer"><strong>层级（layer）</strong></label>
-            <select id="eLayer">
-              <option value="inner">内搭</option>
-              <option value="outer">外搭</option>
-              <option value="none">无</option>
-            </select>
 
-            <label for="eVLevel"><strong>百搭等级</strong></label>
-            <select id="eVLevel">
-              <option value="0">普通</option>
-              <option value="1">较百搭</option>
-              <option value="2">非常百搭</option>
-            </select>
-
-            <div class="season-group">
-              <div><strong>特征（features）</strong></div>
-              <label><input type="checkbox" name="eFeature" value="strappy"> 吊带</label>
-              <label><input type="checkbox" name="eFeature" value="cardigan"> 开衫</label>
-              <label><input type="checkbox" name="eFeature" value="sun_protection"> 防晒衣</label>
-              <label><input type="checkbox" name="eFeature" value="thick_outerwear"> 厚外套</label>
-              <label><input type="checkbox" name="eFeature" value="tshirt"> T恤</label>
-            </div>
           <div class="season-group">
-            <div><strong>季节（1~2 个）</strong></div>
+            <div><strong>季节（可选 1~4 个）</strong></div>
             <label><input type="checkbox" name="eSeason" value="spring"> 春</label>
             <label><input type="checkbox" name="eSeason" value="summer"> 夏</label>
             <label><input type="checkbox" name="eSeason" value="autumn"> 秋</label>
@@ -113,54 +80,18 @@
           </div>
 
           <label class="inline-check">
-            <input id="eVersatile" type="checkbox">
-            百搭
-          </label>
-
-          <label class="inline-check">
             替换图片：
-            <input id="eImage" type="file" accept="image/*">
+            <input id="eImage" type="file" accept="image/*" />
           </label>
 
           <button id="saveBtn" type="button" class="primary-btn">保存修改</button>
           <button id="deleteBtn" type="button" class="delete-btn">删除这件衣服</button>
         </div>
-        <hr />
-    <h2>搭配规则（穿搭图）</h2>
 
-    <div class="add-form">
-      <label for="pairCategory"><strong>按类别筛选候选</strong></label>
-      <select id="pairCategory">
-        <option value="">全部</option>
-        <option value="outer">外搭</option>
-        <option value="top">上衣（内搭/外搭都算）</option>
-        <option value="skirt">裙子</option>
-        <option value="pants">裤子</option>
-        <option value="dress">连衣裙/套装</option>
-        <option value="shoes">鞋子</option>
-        <option value="socks">袜子</option>
-      </select>
-
-      <div class="pair-actions">
-        <button id="addAllowBtn" type="button" class="primary-btn">添加为 ✅允许</button>
-        <button id="addDenyBtn" type="button" class="delete-btn">添加为 ❌互斥</button>
+        <div class="empty-tip" id="editorHint"></div>
       </div>
-
-      <div class="empty-tip" id="pairTip">步骤：先在候选区点选一件衣服，再点“允许/互斥”</div>
-    </div>
-
-    <h3>候选衣服（点选一件）</h3>
-    <div id="pairCandidates" class="detail-grid"></div>
-
-    <h3>已设置：✅允许</h3>
-    <div id="pairAllowList" class="history-list"></div>
-
-    <h3>已设置：❌互斥</h3>
-    <div id="pairDenyList" class="history-list"></div>
-            <div class="empty-tip" id="editorHint"></div>
-          </div>
-        </aside>
-      </div>
+    </aside>
+  </div>
 
   <script type="module" src="js/wardrobe_page.js"></script>
 </body>

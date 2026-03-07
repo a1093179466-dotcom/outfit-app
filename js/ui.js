@@ -1,11 +1,11 @@
 // js/ui.js
 
-export function renderWardrobe(clothes, { onDelete }) {
+export function renderWardrobe(clothes) {
   const listEl = document.getElementById("clothList");
   listEl.innerHTML = "";
 
   if (!clothes || clothes.length === 0) {
-    listEl.innerHTML = `<div class="empty-tip">还没有衣服，先添加几件吧～</div>`;
+    listEl.innerHTML = `<div class="empty-tip">还没有衣服，先去衣柜详情添加吧～</div>`;
     return;
   }
 
@@ -17,60 +17,28 @@ export function renderWardrobe(clothes, { onDelete }) {
       ? `<img src="${cloth.image}" alt="${escapeHtml(cloth.name)}">`
       : "";
 
-    const typeLabel = formatType(cloth.type);
-    const seasonLabel = formatSeasons(cloth.seasons);
-    const versatileLabel = cloth.versatile ? "是" : "否";
-
     card.innerHTML = `
       ${imageHTML}
       <div class="cloth-name">${escapeHtml(cloth.name)}</div>
-      <div class="meta-line"><span class="tag">${escapeHtml(typeLabel)}</span></div>
-      <div class="meta-line">季节：${escapeHtml(seasonLabel)}</div>
-      <div class="meta-line">百搭：${versatileLabel}</div>
-      <button class="delete-btn" type="button">删除</button>
+      <div class="meta-line"><span class="tag">${escapeHtml(formatKind(cloth.kind))}</span></div>
+      <div class="meta-line">季节：${escapeHtml(formatSeasons(cloth.seasons))}</div>
     `;
-
-    const deleteBtn = card.querySelector(".delete-btn");
-    deleteBtn.addEventListener("click", () => onDelete(cloth.id));
 
     listEl.appendChild(card);
   });
 }
 
-/**
- * 渲染穿搭结果（兼容新旧两套 DOM id）
- * - 新版页面：outfitMain1/outfitMain2/outfitShoes/outfitSocks
- * - 旧版页面：outfitTop/outfitPants/outfitShoes
- */
 export function renderOutfit(result) {
-  renderOutfitCard("outfitOuter", "外搭", result?.outer ?? null);
-  const hasNew =
-    document.getElementById("outfitMain1") ||
-    document.getElementById("outfitMain2") ||
-    document.getElementById("outfitSocks");
-
-  if (hasNew) {
-    // 你的 outfit.js 返回 {main1, main2, shoes, socks}
-    renderOutfitCard("outfitMain1", "主件1", result?.main1 ?? null);
-    renderOutfitCard("outfitMain2", "主件2", result?.main2 ?? null);
-    renderOutfitCard("outfitShoes", "鞋子", result?.shoes ?? null);
-    renderOutfitCard("outfitSocks", "袜子", result?.socks ?? null);
-    return;
-  }
-
-  // 旧版映射（如果你主页还没改成主件1/2的布局）
-  renderOutfitCard("outfitTop", "上衣", result?.main1 ?? result?.top ?? null);
-  renderOutfitCard("outfitPants", "裤子", result?.main2 ?? result?.pants ?? null);
+  renderOutfitCard("outfitMain1", "主件1", result?.main1 ?? null);
+  renderOutfitCard("outfitMain2", "主件2", result?.main2 ?? null);
+  renderOutfitCard("outfitBottom", "下装", result?.bottom ?? null);
+  renderOutfitCard("outfitSocks", "袜子", result?.socks ?? null);
   renderOutfitCard("outfitShoes", "鞋子", result?.shoes ?? null);
 }
 
 function renderOutfitCard(elementId, label, item) {
   const el = document.getElementById(elementId);
-
-  if (!el) {
-    console.warn("Outfit element not found:", elementId);
-    return;
-  }
+  if (!el) return;
 
   if (!item) {
     el.innerHTML = `${label}：无`;
@@ -81,25 +49,24 @@ function renderOutfitCard(elementId, label, item) {
     ? `<img src="${item.image}" alt="${escapeHtml(item.name)}">`
     : "";
 
-  const typeLabel = item.type ? formatType(item.type) : "";
-
   el.innerHTML = `
     ${imageHTML}
-    <p>${label}：${escapeHtml(item.name)}</p>
-    ${typeLabel ? `<p>类型：${escapeHtml(typeLabel)}</p>` : ""}
+    <div class="cloth-name">${escapeHtml(item.name)}</div>
+    <div class="meta-line"><span class="tag">${escapeHtml(formatKind(item.kind))}</span></div>
   `;
 }
 
-function formatType(type) {
+function formatKind(kind) {
   const map = {
     jk_set: "JK套装",
     daily_set: "日常套装",
-    skirt: "单裙子",
-    top: "单上衣",
+    outer: "外搭",
+    inner: "内搭",
+    bottom: "下装",
     socks: "袜子",
     shoes: "鞋子",
   };
-  return map[type] || String(type || "");
+  return map[kind] || kind || "未分类";
 }
 
 function formatSeasons(seasons = []) {

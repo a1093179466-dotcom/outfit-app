@@ -73,3 +73,11 @@ CREATE TABLE IF NOT EXISTS outfit_presets (
   created_at INTEGER NOT NULL
 );
 """
+
+NEW_COLUMNS = [
+    ("category", "TEXT"),
+    ("layer", "TEXT"),
+    ("features", "TEXT"),
+    ("versatile_level", "INTEGER"),
+    ("kind", "TEXT"),  # ✅ 新增
+]

@@ -43,12 +43,22 @@ def create_cloth(name: str, type_: str, seasons: list, versatile: bool, base_url
     return row_to_out(row, base_url)
 
 
-def update_cloth(cloth_id: str, name=None, type_=None, seasons=None, versatile=None, base_url: str = "",
-                 category=None, layer=None, features=None, versatile_level=None) -> Optional[dict]:
+def update_cloth(
+    cloth_id: str,
+    name=None,
+    type_=None,
+    seasons=None,
+    versatile=None,
+    kind=None,          # ✅ 加这一行
+    base_url: str = "",
+):
     row = cloth_repo.update_cloth(
         cloth_id,
-        name=name, type_=type_, seasons=seasons, versatile=versatile,
-        category=category, layer=layer, features=features, versatile_level=versatile_level
+        name=name,
+        type_=type_,
+        seasons=seasons,
+        versatile=versatile,
+        kind=kind,       # ✅ 加这一行
     )
     return row_to_out(row, base_url) if row else None
 
@@ -70,3 +80,50 @@ def delete_cloth(cloth_id: str) -> bool:
 
     # 再删 DB 记录
     return cloth_repo.delete_cloth(cloth_id)
+
+def _infer_kind(row: dict) -> str:
+    # 1) 如果数据库已有 kind，直接用
+    k = row.get("kind")
+    if k:
+        return k
+
+    # 2) 否则尽量从旧 type/category 推断
+    t = row.get("type")
+
+    # 套装
+    if t in ["jk_set", "daily_set"]:
+        return t
+
+    # 旧 top -> inner
+    if t == "top":
+        return "inner"
+
+    # 旧 skirt/pants -> bottom
+    if t in ["skirt", "pants"]:
+        return "bottom"
+
+    # 旧 socks/shoes
+    if t == "socks":
+        return "socks"
+    if t == "shoes":
+        return "shoes"
+
+    # 兜底
+    return "inner"
+
+def row_to_out(row: dict, base_url: str = "") -> dict:
+    seasons = json.loads(row["seasons"])
+    image_path = row.get("image_path")
+    image_url = f"{base_url}{image_path}" if image_path else None
+
+    kind = _infer_kind(row)
+
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "seasons": seasons,
+        "kind": kind,
+        "type": row.get("type"),
+        "image_url": image_url,
+        "created_at": row["created_at"],
+    }

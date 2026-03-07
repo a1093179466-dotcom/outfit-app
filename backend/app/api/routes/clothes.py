@@ -37,13 +37,9 @@ def put_cloth(cloth_id: str, payload: ClothUpdate, request: Request):
     name=payload.name,
     type_=payload.type,
     seasons=payload.seasons,
-    versatile=payload.versatile,
-    category=payload.category,
-    layer=payload.layer,
-    features=payload.features,
-    versatile_level=payload.versatile_level,
+    kind=payload.kind,              # ✅ 新增参数
     base_url=base_url,
-    )   
+)   
     if not updated:
         raise HTTPException(status_code=404, detail="Cloth not found")
     return updated
@@ -74,7 +70,14 @@ def upload_image(cloth_id: str, request: Request, file: UploadFile = File(...)):
     base_url = str(request.base_url).rstrip("/")
     row2 = cloth_repo.get_cloth(cloth_id)
     assert row2 is not None
-    return cloth_service.row_to_out(row2, base_url=base_url)
+    return cloth_service.create_cloth(
+    payload.name,
+    payload.type or payload.kind,   # type 可选，不给就用 kind
+    payload.seasons,
+    False,                          # versatile 不再使用，先固定 False
+    base_url=base_url,
+    kind=payload.kind,              # ✅ 新增参数
+)
 
 
 @router.delete("/{cloth_id}")
