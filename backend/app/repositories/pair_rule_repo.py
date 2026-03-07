@@ -62,3 +62,5 @@ def delete_rule(rule_id: str) -> bool:
         return cur.rowcount > 0
     finally:
         conn.close()
+
+        

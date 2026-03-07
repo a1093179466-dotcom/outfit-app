@@ -21,3 +21,7 @@ def delete_rule(rule_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail="Rule not found")
     return {"ok": True}
+
+@router.get("/all", response_model=list[PairRuleOut])
+def get_all_rules(limit: int = Query(100000, ge=1, le=200000)):
+    return pair_rule_service.list_all_rules(limit=limit)

@@ -1,10 +1,15 @@
 // js/outfit_builder.js
 
 import { getClothes, initWardrobeFromApi } from "./wardrobe.js";
-import { apiListPairRules, apiCreatePreset, apiListPresets, apiDeletePreset } from "./api_client.js";
+import {
+  apiListAllPairRules,
+  apiCreatePreset,
+  apiListPresets,
+  apiDeletePreset,
+} from "./api_client.js";
 
 const el = (id) => document.getElementById(id);
-
+const autoCompleteBtn = el("autoCompleteBtn");
 /** Controls */
 const seasonSelect = el("seasonSelect");
 const startSlot = el("startSlot");
@@ -53,7 +58,9 @@ const slots = ["outer", "top", "bottom", "dress", "shoes", "socks"];
 
 /**
  * 当前穿搭（槽位 -> cloth）
- * - dress 与 top/bottom 互斥：选 dress 会清空 top/bottom；选 top/bottom 会清空 dress
+ * dress 与 top/bottom 互斥：
+ * - 选 dress 会清空 top/bottom
+ * - 选 top/bottom 会清空 dress
  */
 let outfit = {
   season: "autumn",
@@ -64,6 +71,9 @@ let outfit = {
   shoes: null,
   socks: null,
 };
+
+/** 当前锚点：默认“最后一次选择的衣服” */
+let anchorId = null;
 
 /**
  * 搭配图（allow/deny）
@@ -80,7 +90,7 @@ async function init() {
   outfit.season = seasonSelect.value;
 
   await initWardrobeFromApi();
-  await rebuildGraph(); // 从后端拉 pair_rules 生成图
+  await rebuildGraph();
 
   bindEvents();
   renderCurrentOutfit();
@@ -89,6 +99,7 @@ async function init() {
 }
 
 function bindEvents() {
+  autoCompleteBtn.addEventListener("click", autoComplete);
   seasonSelect.addEventListener("change", async () => {
     outfit.season = seasonSelect.value;
     renderCurrentOutfit();
@@ -110,6 +121,7 @@ function bindEvents() {
       shoes: null,
       socks: null,
     };
+    anchorId = null;
     renderCurrentOutfit();
     refreshAllCandidates();
   });
@@ -121,41 +133,40 @@ function bindEvents() {
     autoBtns[s].addEventListener("click", () => pickRandomForSlot(s));
     clearBtns[s].addEventListener("click", () => {
       outfit[s] = null;
+
+      // 如果清掉的是锚点衣服，则锚点回退到“最后一个还存在的已选衣服”
+      if (anchorId && !getSelectedIds().includes(anchorId)) {
+        anchorId = getSelectedIds().slice(-1)[0] || null;
+      }
+
       renderCurrentOutfit();
       refreshAllCandidates();
     });
   });
 }
 
-/**
- * 简化实现：对每件衣服各拉一次 pair_rules，再合成全图
- * 衣柜很大时会慢，后续可以做后端一次性返回全图的接口优化。
- */
+/** 一次拉全图，构建 allow/deny */
 async function rebuildGraph() {
-  const clothes = getClothes();
   const allow = new Map();
   const deny = new Map();
 
-  for (const c of clothes) {
-    try {
-      const rules = await apiListPairRules(c.id);
+  try {
+    const rules = await apiListAllPairRules();
 
-      for (const r of rules) {
-        // 规则记录的是 a_id/b_id（无向），对每条规则我们给双方都加边
-        const a = r.a_id;
-        const b = r.b_id;
+    for (const r of rules) {
+      const a = r.a_id;
+      const b = r.b_id;
 
-        if (r.rule === "allow") {
-          addEdge(allow, a, b);
-          addEdge(allow, b, a);
-        } else if (r.rule === "deny") {
-          addEdge(deny, a, b);
-          addEdge(deny, b, a);
-        }
+      if (r.rule === "allow") {
+        addEdge(allow, a, b);
+        addEdge(allow, b, a);
+      } else if (r.rule === "deny") {
+        addEdge(deny, a, b);
+        addEdge(deny, b, a);
       }
-    } catch (e) {
-      // 某件衣服没有规则/请求失败就跳过
     }
+  } catch (e) {
+    console.warn("拉取全量搭配图失败，使用空图：", e);
   }
 
   graph = { allow, deny };
@@ -166,37 +177,61 @@ function addEdge(map, from, to) {
   map.get(from).add(to);
 }
 
-/** ===== Render current outfit ===== */
+/** ===== Current Outfit Render (可点击设置锚点) ===== */
 
 function renderCurrentOutfit() {
-  const parts = [];
-  const pushPart = (label, item) => {
-    if (!item) return;
-    parts.push(`${label}:${item.name}`);
-  };
+  const selected = [
+    { slot: "outer", label: "外搭", item: outfit.outer },
+    { slot: "top", label: "上衣", item: outfit.top },
+    { slot: "bottom", label: "下装", item: outfit.bottom },
+    { slot: "dress", label: "连衣裙", item: outfit.dress },
+    { slot: "shoes", label: "鞋子", item: outfit.shoes },
+    { slot: "socks", label: "袜子", item: outfit.socks },
+  ].filter((x) => x.item);
 
-  pushPart("外搭", outfit.outer);
-  pushPart("上衣", outfit.top);
-  pushPart("下装", outfit.bottom);
-  pushPart("连衣裙", outfit.dress);
-  pushPart("鞋子", outfit.shoes);
-  pushPart("袜子", outfit.socks);
+  const anchorName = anchorId ? (getClothNameById(anchorId) || anchorId.slice(0, 6)) : "未设置";
 
   currentOutfitEl.innerHTML = `
     <div class="history-head">
       <strong>季节：${formatSeason(outfit.season)}</strong>
-      <span>${parts.length ? "已选" : "未选择"}</span>
+      <span>锚点：${escapeHtml(anchorName)}</span>
     </div>
-    <div class="history-names">${
-      parts.length ? parts.join("  |  ") : "从任意部位开始选择吧～"
-    }</div>
+    <div class="history-names">
+      ${
+        selected.length
+          ? selected
+              .map((x) => {
+                const isAnchor = x.item.id === anchorId;
+                return `<button type="button" data-id="${x.item.id}" class="link-btn" style="margin:4px; ${isAnchor ? "border-color:#4a69bd;" : ""}">
+                  ${escapeHtml(x.label)}：${escapeHtml(x.item.name)}${isAnchor ? " ★" : ""}
+                </button>`;
+              })
+              .join("")
+          : "从任意部位开始选择吧～（选择后会自动成为锚点）"
+      }
+    </div>
   `;
 
+  // 绑定点击：点击已选衣服 -> 设置锚点
+  currentOutfitEl.querySelectorAll("button[data-id]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      anchorId = btn.getAttribute("data-id");
+      statusTip.textContent = `已将锚点设为：${getClothNameById(anchorId) || anchorId}`;
+      renderCurrentOutfit();
+      refreshAllCandidates();
+    });
+  });
+
   statusTip.textContent =
-    "提示：你可以从任意部位开始，系统会根据你的搭配图（allow/deny）推荐其它候选；“帮我选”是等概率随机。";
+    "规则：候选优先显示“锚点 allow 命中（推荐）”；没有 allow 时显示“探索区（未禁止）”。";
 }
 
-/** ===== Candidate rendering ===== */
+function getClothNameById(id) {
+  const c = getClothes().find((x) => x.id === id);
+  return c ? c.name : null;
+}
+
+/** ===== Candidates ===== */
 
 function refreshAllCandidates() {
   slots.forEach((s) => renderCandidatesForSlot(s));
@@ -206,27 +241,59 @@ function renderCandidatesForSlot(slot) {
   const container = candEls[slot];
   container.innerHTML = "";
 
-  const candidates = getCandidates(slot);
+  const { recommended, explore } = getCandidates(slot);
 
-  if (!candidates.length) {
-    container.innerHTML = `<div class="empty-tip">无候选</div>`;
-    return;
+  // 推荐区
+  const recTitle = document.createElement("div");
+  recTitle.className = "meta-line";
+  recTitle.innerHTML = `<strong>✅ 推荐（匹配锚点）</strong>`;
+  container.appendChild(recTitle);
+
+  const recGrid = document.createElement("div");
+  recGrid.className = "detail-grid";
+  container.appendChild(recGrid);
+
+  if (recommended.length === 0) {
+    recGrid.innerHTML = `<div class="empty-tip">无推荐</div>`;
+  } else {
+    recommended.slice(0, 16).forEach((c) => recGrid.appendChild(makeCandidateCard(slot, c)));
   }
 
-  candidates.slice(0, 24).forEach((c) => {
-    const card = document.createElement("div");
-    card.className = "cloth-card";
+  // 探索区折叠
+  const details = document.createElement("details");
+  details.style.marginTop = "10px";
 
-    const img = c.image ? `<img src="${c.image}" alt="${escapeHtml(c.name)}">` : "";
-    card.innerHTML = `
-      ${img}
-      <div class="cloth-name">${escapeHtml(c.name)}</div>
-      <div class="meta-line"><span class="tag">${escapeHtml(formatCategory(c))}</span></div>
-    `;
+  const summary = document.createElement("summary");
+  summary.textContent = `🔎 探索（未明确允许，但未冲突）${explore.length ? `：${explore.length}项` : ""}`;
+  details.appendChild(summary);
 
-    card.addEventListener("click", () => applyChoice(slot, c));
-    container.appendChild(card);
-  });
+  const expGrid = document.createElement("div");
+  expGrid.className = "detail-grid";
+  expGrid.style.marginTop = "10px";
+  details.appendChild(expGrid);
+
+  if (explore.length === 0) {
+    expGrid.innerHTML = `<div class="empty-tip">无探索候选</div>`;
+  } else {
+    explore.slice(0, 24).forEach((c) => expGrid.appendChild(makeCandidateCard(slot, c)));
+  }
+
+  container.appendChild(details);
+}
+
+function makeCandidateCard(slot, cloth) {
+  const card = document.createElement("div");
+  card.className = "cloth-card";
+
+  const img = cloth.image ? `<img src="${cloth.image}" alt="${escapeHtml(cloth.name)}">` : "";
+  card.innerHTML = `
+    ${img}
+    <div class="cloth-name">${escapeHtml(cloth.name)}</div>
+    <div class="meta-line"><span class="tag">${escapeHtml(formatCategory(cloth))}</span></div>
+  `;
+
+  card.addEventListener("click", () => applyChoice(slot, cloth));
+  return card;
 }
 
 function applyChoice(slot, cloth) {
@@ -242,32 +309,36 @@ function applyChoice(slot, cloth) {
     outfit[slot] = cloth;
   }
 
+  // ✅ 默认锚点：最后一次选择的衣服
+  anchorId = cloth.id;
+
   renderCurrentOutfit();
   refreshAllCandidates();
 }
 
 function pickRandomForSlot(slot) {
-  const candidates = getCandidates(slot);
-  if (!candidates.length) {
+  const { recommended, explore } = getCandidates(slot);
+
+  const pool = recommended.length ? recommended : explore;
+  if (!pool.length) {
     alert(`没有可选的 ${slotLabel(slot)}`);
     return;
   }
-  const c = candidates[Math.floor(Math.random() * candidates.length)];
+  const c = pool[Math.floor(Math.random() * pool.length)];
   applyChoice(slot, c);
 }
 
 function getSelectedIds() {
-  return slots
-    .map((s) => outfit[s]?.id)
-    .filter(Boolean);
+  return slots.map((s) => outfit[s]?.id).filter(Boolean);
 }
 
 /**
- * 候选计算逻辑（树形推荐核心）：
+ * 候选计算逻辑（锚点驱动）：
  * 1) 季节过滤
  * 2) 槽位类别过滤
  * 3) deny 过滤（与当前已选任意一件存在 deny 就排除）
- * 4) allow 优先（如果存在 allow 命中，则只展示 allow 命中集合；否则展示剩余集合）
+ * 4) 推荐 = 仅锚点 allow 命中（如果锚点有 allow）；探索 = 其余可用
+ *    - 若锚点不存在或锚点没有 allow：推荐为空，探索为全部可用
  */
 function getCandidates(slot) {
   const clothes = getClothes();
@@ -283,6 +354,7 @@ function getCandidates(slot) {
   const selected = getSelectedIds();
   pool = pool.filter((c) => {
     if (selected.includes(c.id)) return false;
+
     for (const sid of selected) {
       const denySet = graph.deny.get(sid);
       if (denySet && denySet.has(c.id)) return false;
@@ -290,26 +362,22 @@ function getCandidates(slot) {
     return true;
   });
 
-  // 4) allow 优先（如果当前已选里有人允许它，则归为 allowHits）
-  const allowHits = [];
-  const rest = [];
+  // 4) 推荐/探索划分
+  const anchor = anchorId;
+  const allowSet = anchor ? graph.allow.get(anchor) : null;
 
+  if (!anchor || !allowSet || allowSet.size === 0) {
+    return { recommended: [], explore: pool };
+  }
+
+  const recommended = [];
+  const explore = [];
   for (const c of pool) {
-    if (isAllowedByAnySelected(c.id)) allowHits.push(c);
-    else rest.push(c);
+    if (allowSet.has(c.id)) recommended.push(c);
+    else explore.push(c);
   }
 
-  // 如果命中 allow，则优先展示 allow 列表（更像“树”）；没有 allow 则展示 rest（探索区）
-  return allowHits.length ? allowHits : rest;
-}
-
-function isAllowedByAnySelected(candidateId) {
-  const selected = getSelectedIds();
-  for (const sid of selected) {
-    const allowSet = graph.allow.get(sid);
-    if (allowSet && allowSet.has(candidateId)) return true;
-  }
-  return false;
+  return { recommended, explore };
 }
 
 function matchesSlot(slot, cloth) {
@@ -403,12 +471,10 @@ async function renderPresetList() {
         </div>
       `;
 
-      // 加载
       div.querySelectorAll("button")[0].addEventListener("click", () => {
         applyPresetItems(p.items || []);
       });
 
-      // 删除
       div.querySelectorAll("button")[1].addEventListener("click", async () => {
         if (!confirm("确定删除这个方案吗？")) return;
         try {
@@ -432,6 +498,7 @@ async function renderPresetList() {
  * items 数组方式：加载时按 category 自动落槽位
  * - 如果有 dress：占用 dress，并清空 top/bottom
  * - bottom：skirt/pants 二选一（取第一个命中的）
+ * - 锚点：默认设为“dress 或 top 或 bottom”（优先主件）
  */
 function applyPresetItems(ids) {
   const byId = new Map(getClothes().map((c) => [c.id, c]));
@@ -461,6 +528,16 @@ function applyPresetItems(ids) {
   outfit.outer = outer;
   outfit.shoes = shoes;
   outfit.socks = socks;
+
+  // 锚点优先：dress > top > bottom > shoes > socks > outer
+  anchorId =
+    (outfit.dress && outfit.dress.id) ||
+    (outfit.top && outfit.top.id) ||
+    (outfit.bottom && outfit.bottom.id) ||
+    (outfit.shoes && outfit.shoes.id) ||
+    (outfit.socks && outfit.socks.id) ||
+    (outfit.outer && outfit.outer.id) ||
+    null;
 
   renderCurrentOutfit();
   refreshAllCandidates();
@@ -519,4 +596,68 @@ function escapeHtml(str = "") {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+
+function needOuterBySeason(season) {
+  return season === "spring" || season === "autumn" || season === "winter";
+}
+
+function optionalOuterBySeason(season) {
+  return season === "summer";
+}
+
+function isEmptySlot(slot) {
+  return !outfit[slot];
+}
+
+function autoComplete() {
+  // 没有任何起点，就按 startSlot 先随机一个起点
+  if (getSelectedIds().length === 0) {
+    pickRandomForSlot(startSlot.value);
+  }
+
+  // 如果选了 dress，就不要补 top/bottom
+  const hasDress = !!outfit.dress;
+
+  // 季节外搭规则
+  const season = outfit.season;
+  const mustOuter = needOuterBySeason(season);
+  const mayOuter = optionalOuterBySeason(season);
+
+  // 1) 先决定并补结构性槽位：dress vs top+bottom
+  // 如果没有 dress 也没有 top/bottom，则优先补一个结构
+  if (!hasDress && (!outfit.top || !outfit.bottom)) {
+    // 这里不强行 50/50：更贴近“由你当前已选决定”
+    // 如果已经选了 bottom，就补 top；如果已选 top，就补 bottom；都没选就默认补 bottom 再补 top
+    if (outfit.bottom && !outfit.top) {
+      pickRandomForSlot("top");
+    } else if (outfit.top && !outfit.bottom) {
+      pickRandomForSlot("bottom");
+    } else if (!outfit.top && !outfit.bottom && !outfit.dress) {
+      // 没起点或起点不是结构部位（比如鞋袜）
+      pickRandomForSlot("bottom");
+      pickRandomForSlot("top");
+    }
+  }
+
+  // 2) 补 shoes / socks（通常都需要）
+  if (isEmptySlot("shoes")) pickRandomForSlot("shoes");
+  if (isEmptySlot("socks")) pickRandomForSlot("socks");
+
+  // 3) 补 outer：春秋冬必选；夏季可选 50%
+  if (mustOuter) {
+    if (isEmptySlot("outer")) pickRandomForSlot("outer");
+  } else if (mayOuter) {
+    if (isEmptySlot("outer") && Math.random() < 0.5) pickRandomForSlot("outer");
+  }
+
+  // 4) 如果当前是 dress 模式，确保 top/bottom 已清空（applyChoice 已经做了，这里再兜底）
+  if (outfit.dress) {
+    outfit.top = null;
+    outfit.bottom = null;
+  }
+
+  renderCurrentOutfit();
+  refreshAllCandidates();
 }

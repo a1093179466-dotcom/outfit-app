@@ -13,3 +13,6 @@ def set_rule(cloth_id: str, other_id: str, rule: str, note: Optional[str]) -> di
 
 def delete_rule(rule_id: str) -> bool:
     return pair_rule_repo.delete_rule(rule_id)
+
+def list_all_rules(limit: int = 100000) -> List[dict]:
+    return pair_rule_repo.list_all_rules(limit=limit)

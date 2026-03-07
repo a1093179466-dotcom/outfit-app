@@ -114,3 +114,7 @@ export async function apiDeletePreset(id) {
   }
   return res.json();
 }
+
+export async function apiListAllPairRules() {
+  return requestJson("/api/pair-rules/all", { method: "GET" });
+}
