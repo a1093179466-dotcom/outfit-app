@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>穿搭工作台（网状穿搭图）</title>
+  <title>穿搭工作台</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header>
-    <h1>穿搭工作台（网状穿搭图）</h1>
+    <h1>穿搭工作台</h1>
   </header>
 
   <div class="container container-detail">
-    <!-- 左侧：控制 + 当前穿搭 -->
     <section class="panel wardrobe-detail" style="width: 35%;">
       <div class="detail-toolbar">
         <a class="link-btn" href="./index.html">← 返回主页</a>
@@ -35,43 +34,25 @@
         </select>
 
         <button id="pickStartBtn" type="button" class="primary-btn">系统随机选起点</button>
-
-        <div class="empty-tip" id="statusTip">
-          提示：点击候选卡片选中；每次选择都会实时剔除禁忌，并优先推荐“优先搭配”。
-        </div>
+        <div class="empty-tip" id="statusTip">提示：候选会实时剔除禁忌，优先推荐“优先搭配”。</div>
       </div>
 
       <hr />
 
       <h2>当前穿搭</h2>
-      <div id="currentOutfit" class="history-item"></div>
+      <div id="currentOutfit" class="history-list"></div>
 
       <div class="add-form" style="margin-top: 10px;">
         <button id="autoCompleteBtn" type="button" class="primary-btn">一键补全缺失部位</button>
         <button id="clearOutfitBtn" type="button" class="delete-btn">清空当前穿搭</button>
       </div>
-
-      <hr />
-
-      <h2>保存为搭配方案（Preset）</h2>
-      <div class="add-form">
-        <textarea id="presetNote" rows="2" placeholder="方案备注（可选）"></textarea>
-        <button id="savePresetBtn" type="button" class="primary-btn">保存为搭配方案</button>
-        <button id="loadPresetBtn" type="button" class="primary-btn">随机加载一个方案</button>
-      </div>
-
-      <div style="margin-top: 10px;">
-        <h3>当前季节方案</h3>
-        <div id="presetList" class="history-list"></div>
-      </div>
     </section>
 
-    <!-- 右侧：候选推荐（实时联动） -->
     <section class="panel editor" style="width: 65%;">
-      <h2>候选推荐（实时联动）</h2>
+      <h2>候选推荐</h2>
 
       <div class="group">
-        <div class="group-title">主件1：外搭（可有可无）</div>
+        <div class="group-title">外搭（可有可无）</div>
         <div class="pair-actions">
           <button id="autoOuter" class="primary-btn" type="button">帮我选外搭</button>
           <button id="clearOuter" class="delete-btn" type="button">清除外搭</button>
@@ -80,7 +61,7 @@
       </div>
 
       <div class="group">
-        <div class="group-title">主件2：套装或内搭（二选一）</div>
+        <div class="group-title">主件2（套装/内搭 二选一）</div>
         <div class="pair-actions">
           <button id="autoMain2" class="primary-btn" type="button">帮我选主件2</button>
           <button id="clearMain2" class="delete-btn" type="button">清除主件2</button>
@@ -89,7 +70,7 @@
       </div>
 
       <div class="group">
-        <div class="group-title">下装（仅当主件2=内搭时需要）</div>
+        <div class="group-title">下装（主件2=内搭时需要）</div>
         <div class="pair-actions">
           <button id="autoBottom" class="primary-btn" type="button">帮我选下装</button>
           <button id="clearBottom" class="delete-btn" type="button">清除下装</button>
