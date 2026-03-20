@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>穿搭工作台</title>
+  <title>穿搭工作台（网状穿搭图）</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header>
-    <h1>穿搭工作台</h1>
+    <h1>穿搭工作台（网状穿搭图）</h1>
   </header>
 
   <div class="container container-detail">
-    <!-- 左侧：控制 -->
+    <!-- 左侧：控制 + 当前穿搭 -->
     <section class="panel wardrobe-detail" style="width: 35%;">
       <div class="detail-toolbar">
         <a class="link-btn" href="./index.html">← 返回主页</a>
@@ -23,22 +23,22 @@
         <select id="seasonSelect">
           <option value="spring">春</option>
           <option value="summer">夏</option>
-          <option value="autumn">秋</option>
+          <option value="autumn" selected>秋</option>
           <option value="winter">冬</option>
         </select>
 
-        <label><strong>从哪一类开始</strong></label>
+        <label><strong>从哪一类开始（不含鞋袜）</strong></label>
         <select id="startSlot">
-          <option value="top">上衣（内搭）</option>
-          <option value="bottom">下装（裙/裤）</option>
-          <option value="outer">外搭</option>
-          <option value="dress">连衣裙/套装</option>
-          <option value="shoes">鞋子</option>
-          <option value="socks">袜子</option>
+          <option value="outer">外搭（主件1）</option>
+          <option value="main2">主件2（套装/内搭）</option>
+          <option value="bottom">下装</option>
         </select>
 
-        <button id="pickStartBtn" type="button" class="primary-btn">帮我选起点</button>
-        <div class="empty-tip" id="statusTip">提示：先选一个起点，然后逐步补全其它部位</div>
+        <button id="pickStartBtn" type="button" class="primary-btn">系统随机选起点</button>
+
+        <div class="empty-tip" id="statusTip">
+          提示：点击候选卡片选中；每次选择都会实时剔除禁忌，并优先推荐“优先搭配”。
+        </div>
       </div>
 
       <hr />
@@ -46,27 +46,32 @@
       <h2>当前穿搭</h2>
       <div id="currentOutfit" class="history-item"></div>
 
-    <div class="add-form" style="margin-top: 10px;">
-      <textarea id="presetNote" rows="2" placeholder="方案备注（可选）"></textarea>
+      <div class="add-form" style="margin-top: 10px;">
+        <button id="autoCompleteBtn" type="button" class="primary-btn">一键补全缺失部位</button>
+        <button id="clearOutfitBtn" type="button" class="delete-btn">清空当前穿搭</button>
+      </div>
 
-      <button id="savePresetBtn" type="button" class="primary-btn">保存为搭配方案</button>
-      <button id="loadPresetBtn" type="button" class="primary-btn">随机加载一个方案</button>
-      <button id="autoCompleteBtn" type="button" class="primary-btn">一键补全缺失部位</button>
-      <button id="clearOutfitBtn" type="button" class="delete-btn">清空当前穿搭</button>
-    </div>
+      <hr />
 
-<div style="margin-top: 10px;">
-  <h3>当前季节方案</h3>
-  <div id="presetList" class="history-list"></div>
-</div>
+      <h2>保存为搭配方案（Preset）</h2>
+      <div class="add-form">
+        <textarea id="presetNote" rows="2" placeholder="方案备注（可选）"></textarea>
+        <button id="savePresetBtn" type="button" class="primary-btn">保存为搭配方案</button>
+        <button id="loadPresetBtn" type="button" class="primary-btn">随机加载一个方案</button>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <h3>当前季节方案</h3>
+        <div id="presetList" class="history-list"></div>
+      </div>
     </section>
 
-    <!-- 右侧：树形候选（按槽位分组） -->
+    <!-- 右侧：候选推荐（实时联动） -->
     <section class="panel editor" style="width: 65%;">
-      <h2>候选推荐</h2>
+      <h2>候选推荐（实时联动）</h2>
 
       <div class="group">
-        <div class="group-title">外搭</div>
+        <div class="group-title">主件1：外搭（可有可无）</div>
         <div class="pair-actions">
           <button id="autoOuter" class="primary-btn" type="button">帮我选外搭</button>
           <button id="clearOuter" class="delete-btn" type="button">清除外搭</button>
@@ -75,39 +80,21 @@
       </div>
 
       <div class="group">
-        <div class="group-title">上衣（内搭）</div>
+        <div class="group-title">主件2：套装或内搭（二选一）</div>
         <div class="pair-actions">
-          <button id="autoTop" class="primary-btn" type="button">帮我选上衣</button>
-          <button id="clearTop" class="delete-btn" type="button">清除上衣</button>
+          <button id="autoMain2" class="primary-btn" type="button">帮我选主件2</button>
+          <button id="clearMain2" class="delete-btn" type="button">清除主件2</button>
         </div>
-        <div id="candTop" class="detail-grid"></div>
+        <div id="candMain2" class="detail-grid"></div>
       </div>
 
       <div class="group">
-        <div class="group-title">下装（裙/裤）</div>
+        <div class="group-title">下装（仅当主件2=内搭时需要）</div>
         <div class="pair-actions">
           <button id="autoBottom" class="primary-btn" type="button">帮我选下装</button>
           <button id="clearBottom" class="delete-btn" type="button">清除下装</button>
         </div>
         <div id="candBottom" class="detail-grid"></div>
-      </div>
-
-      <div class="group">
-        <div class="group-title">连衣裙/套装</div>
-        <div class="pair-actions">
-          <button id="autoDress" class="primary-btn" type="button">帮我选连衣裙</button>
-          <button id="clearDress" class="delete-btn" type="button">清除连衣裙</button>
-        </div>
-        <div id="candDress" class="detail-grid"></div>
-      </div>
-
-      <div class="group">
-        <div class="group-title">鞋子</div>
-        <div class="pair-actions">
-          <button id="autoShoes" class="primary-btn" type="button">帮我选鞋子</button>
-          <button id="clearShoes" class="delete-btn" type="button">清除鞋子</button>
-        </div>
-        <div id="candShoes" class="detail-grid"></div>
       </div>
 
       <div class="group">
@@ -117,6 +104,15 @@
           <button id="clearSocks" class="delete-btn" type="button">清除袜子</button>
         </div>
         <div id="candSocks" class="detail-grid"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">鞋子</div>
+        <div class="pair-actions">
+          <button id="autoShoes" class="primary-btn" type="button">帮我选鞋子</button>
+          <button id="clearShoes" class="delete-btn" type="button">清除鞋子</button>
+        </div>
+        <div id="candShoes" class="detail-grid"></div>
       </div>
     </section>
   </div>

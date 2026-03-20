@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
-RuleType = Literal["allow", "deny"]
+RuleType = Literal["prefer", "deny", "allow"]
 
 class PairRuleCreate(BaseModel):
     other_id: str = Field(min_length=1)     # 另一个衣服 id

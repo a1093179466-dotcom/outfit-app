@@ -7,8 +7,8 @@ def list_rules(cloth_id: str) -> List[dict]:
 def set_rule(cloth_id: str, other_id: str, rule: str, note: Optional[str]) -> dict:
     if cloth_id == other_id:
         raise ValueError("不能和自己建立搭配规则")
-    if rule not in ["allow", "deny"]:
-        raise ValueError("rule 必须是 allow 或 deny")
+    if rule not in ["prefer", "deny", "allow"]:
+        raise ValueError("rule 必须是 prefer / deny（兼容 allow）")
     return pair_rule_repo.upsert_rule(cloth_id, other_id, rule, note)
 
 def delete_rule(rule_id: str) -> bool:

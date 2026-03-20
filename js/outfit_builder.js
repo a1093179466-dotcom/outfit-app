@@ -9,7 +9,7 @@ import {
 } from "./api_client.js";
 
 const el = (id) => document.getElementById(id);
-const autoCompleteBtn = el("autoCompleteBtn");
+
 /** Controls */
 const seasonSelect = el("seasonSelect");
 const startSlot = el("startSlot");
@@ -18,70 +18,61 @@ const statusTip = el("statusTip");
 
 /** Current outfit */
 const currentOutfitEl = el("currentOutfit");
+const autoCompleteBtn = el("autoCompleteBtn");
+const clearOutfitBtn = el("clearOutfitBtn");
+
+/** Presets */
 const presetNote = el("presetNote");
 const savePresetBtn = el("savePresetBtn");
 const loadPresetBtn = el("loadPresetBtn");
-const clearOutfitBtn = el("clearOutfitBtn");
-
-/** Preset list */
 const presetList = el("presetList");
 
 /** Candidate containers */
-const candEls = {
-  outer: el("candOuter"),
-  top: el("candTop"),
-  bottom: el("candBottom"),
-  dress: el("candDress"),
-  shoes: el("candShoes"),
-  socks: el("candSocks"),
-};
+const candOuter = el("candOuter");
+const candMain2 = el("candMain2");
+const candBottom = el("candBottom");
+const candSocks = el("candSocks");
+const candShoes = el("candShoes");
 
-const autoBtns = {
-  outer: el("autoOuter"),
-  top: el("autoTop"),
-  bottom: el("autoBottom"),
-  dress: el("autoDress"),
-  shoes: el("autoShoes"),
-  socks: el("autoSocks"),
-};
+/** Auto/Clear buttons */
+const autoOuter = el("autoOuter");
+const autoMain2 = el("autoMain2");
+const autoBottom = el("autoBottom");
+const autoSocks = el("autoSocks");
+const autoShoes = el("autoShoes");
 
-const clearBtns = {
-  outer: el("clearOuter"),
-  top: el("clearTop"),
-  bottom: el("clearBottom"),
-  dress: el("clearDress"),
-  shoes: el("clearShoes"),
-  socks: el("clearSocks"),
-};
+const clearOuter = el("clearOuter");
+const clearMain2 = el("clearMain2");
+const clearBottom = el("clearBottom");
+const clearSocks = el("clearSocks");
+const clearShoes = el("clearShoes");
 
-const slots = ["outer", "top", "bottom", "dress", "shoes", "socks"];
+/** Slots (kind-based) */
+const slots = ["outer", "main2", "bottom", "socks", "shoes"];
 
 /**
- * 当前穿搭（槽位 -> cloth）
- * dress 与 top/bottom 互斥：
- * - 选 dress 会清空 top/bottom
- * - 选 top/bottom 会清空 dress
+ * Outfit state:
+ * - main1 -> outer (optional)
+ * - main2 -> one of: jk_set / daily_set / inner
+ * - bottom -> required only if main2 is inner
  */
 let outfit = {
   season: "autumn",
-  outer: null,
-  top: null,
-  bottom: null, // skirt or pants
-  dress: null,
-  shoes: null,
-  socks: null,
+  outer: null,  // kind=outer
+  main2: null,  // kind in {jk_set,daily_set,inner}
+  bottom: null, // kind=bottom (only if main2.kind === "inner")
+  socks: null,  // kind=socks
+  shoes: null,  // kind=shoes
 };
 
-/** 当前锚点：默认“最后一次选择的衣服” */
-let anchorId = null;
-
 /**
- * 搭配图（allow/deny）
- * allow/deny: Map<clothId, Set<clothId>>
+ * Graph:
+ * - deny: Map<id, Set<id>>
+ * - prefer: Map<id, Set<id>>  (包含旧 allow)
  */
 let graph = {
-  allow: new Map(),
   deny: new Map(),
+  prefer: new Map(),
 };
 
 init();
@@ -99,7 +90,6 @@ async function init() {
 }
 
 function bindEvents() {
-  autoCompleteBtn.addEventListener("click", autoComplete);
   seasonSelect.addEventListener("change", async () => {
     outfit.season = seasonSelect.value;
     renderCurrentOutfit();
@@ -108,47 +98,50 @@ function bindEvents() {
   });
 
   pickStartBtn.addEventListener("click", () => {
-    pickRandomForSlot(startSlot.value);
+    pickRandomStart();
+  });
+
+  autoCompleteBtn.addEventListener("click", () => {
+    autoComplete();
   });
 
   clearOutfitBtn.addEventListener("click", () => {
     outfit = {
       season: seasonSelect.value,
       outer: null,
-      top: null,
+      main2: null,
       bottom: null,
-      dress: null,
-      shoes: null,
       socks: null,
+      shoes: null,
     };
-    anchorId = null;
     renderCurrentOutfit();
     refreshAllCandidates();
   });
 
+  // Auto pick
+  autoOuter.addEventListener("click", () => pickRandomForSlot("outer"));
+  autoMain2.addEventListener("click", () => pickRandomForSlot("main2"));
+  autoBottom.addEventListener("click", () => pickRandomForSlot("bottom"));
+  autoSocks.addEventListener("click", () => pickRandomForSlot("socks"));
+  autoShoes.addEventListener("click", () => pickRandomForSlot("shoes"));
+
+  // Clear
+  clearOuter.addEventListener("click", () => { outfit.outer = null; renderCurrentOutfit(); refreshAllCandidates(); });
+  clearMain2.addEventListener("click", () => { outfit.main2 = null; outfit.bottom = null; renderCurrentOutfit(); refreshAllCandidates(); });
+  clearBottom.addEventListener("click", () => { outfit.bottom = null; renderCurrentOutfit(); refreshAllCandidates(); });
+  clearSocks.addEventListener("click", () => { outfit.socks = null; renderCurrentOutfit(); refreshAllCandidates(); });
+  clearShoes.addEventListener("click", () => { outfit.shoes = null; renderCurrentOutfit(); refreshAllCandidates(); });
+
+  // Presets
   savePresetBtn.addEventListener("click", savePreset);
   loadPresetBtn.addEventListener("click", loadRandomPreset);
-
-  slots.forEach((s) => {
-    autoBtns[s].addEventListener("click", () => pickRandomForSlot(s));
-    clearBtns[s].addEventListener("click", () => {
-      outfit[s] = null;
-
-      // 如果清掉的是锚点衣服，则锚点回退到“最后一个还存在的已选衣服”
-      if (anchorId && !getSelectedIds().includes(anchorId)) {
-        anchorId = getSelectedIds().slice(-1)[0] || null;
-      }
-
-      renderCurrentOutfit();
-      refreshAllCandidates();
-    });
-  });
 }
 
-/** 一次拉全图，构建 allow/deny */
+/** ===== Graph build (prefer/deny) ===== */
+
 async function rebuildGraph() {
-  const allow = new Map();
   const deny = new Map();
+  const prefer = new Map();
 
   try {
     const rules = await apiListAllPairRules();
@@ -156,20 +149,22 @@ async function rebuildGraph() {
     for (const r of rules) {
       const a = r.a_id;
       const b = r.b_id;
+      const rule = r.rule;
 
-      if (r.rule === "allow") {
-        addEdge(allow, a, b);
-        addEdge(allow, b, a);
-      } else if (r.rule === "deny") {
+      if (rule === "deny") {
         addEdge(deny, a, b);
         addEdge(deny, b, a);
+      } else if (rule === "prefer" || rule === "allow") {
+        // 兼容旧 allow：当作 prefer
+        addEdge(prefer, a, b);
+        addEdge(prefer, b, a);
       }
     }
   } catch (e) {
-    console.warn("拉取全量搭配图失败，使用空图：", e);
+    console.warn("拉取穿搭图失败，使用空图：", e);
   }
 
-  graph = { allow, deny };
+  graph = { deny, prefer };
 }
 
 function addEdge(map, from, to) {
@@ -177,111 +172,143 @@ function addEdge(map, from, to) {
   map.get(from).add(to);
 }
 
-/** ===== Current Outfit Render (可点击设置锚点) ===== */
+/** ===== Core rule helpers ===== */
 
-function renderCurrentOutfit() {
-  const selected = [
-    { slot: "outer", label: "外搭", item: outfit.outer },
-    { slot: "top", label: "上衣", item: outfit.top },
-    { slot: "bottom", label: "下装", item: outfit.bottom },
-    { slot: "dress", label: "连衣裙", item: outfit.dress },
-    { slot: "shoes", label: "鞋子", item: outfit.shoes },
-    { slot: "socks", label: "袜子", item: outfit.socks },
-  ].filter((x) => x.item);
-
-  const anchorName = anchorId ? (getClothNameById(anchorId) || anchorId.slice(0, 6)) : "未设置";
-
-  currentOutfitEl.innerHTML = `
-    <div class="history-head">
-      <strong>季节：${formatSeason(outfit.season)}</strong>
-      <span>锚点：${escapeHtml(anchorName)}</span>
-    </div>
-    <div class="history-names">
-      ${
-        selected.length
-          ? selected
-              .map((x) => {
-                const isAnchor = x.item.id === anchorId;
-                return `<button type="button" data-id="${x.item.id}" class="link-btn" style="margin:4px; ${isAnchor ? "border-color:#4a69bd;" : ""}">
-                  ${escapeHtml(x.label)}：${escapeHtml(x.item.name)}${isAnchor ? " ★" : ""}
-                </button>`;
-              })
-              .join("")
-          : "从任意部位开始选择吧～（选择后会自动成为锚点）"
-      }
-    </div>
-  `;
-
-  // 绑定点击：点击已选衣服 -> 设置锚点
-  currentOutfitEl.querySelectorAll("button[data-id]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      anchorId = btn.getAttribute("data-id");
-      statusTip.textContent = `已将锚点设为：${getClothNameById(anchorId) || anchorId}`;
-      renderCurrentOutfit();
-      refreshAllCandidates();
-    });
-  });
-
-  statusTip.textContent =
-    "规则：候选优先显示“锚点 allow 命中（推荐）”；没有 allow 时显示“探索区（未禁止）”。";
+function filterBySeason(list, season) {
+  return list.filter(c => Array.isArray(c.seasons) && c.seasons.includes(season));
 }
 
-function getClothNameById(id) {
-  const c = getClothes().find((x) => x.id === id);
-  return c ? c.name : null;
+function isDenied(aId, bId) {
+  const s = graph.deny.get(aId);
+  return !!(s && s.has(bId));
 }
 
-/** ===== Candidates ===== */
-
-function refreshAllCandidates() {
-  slots.forEach((s) => renderCandidatesForSlot(s));
+function preferScore(candidateId) {
+  // 分数 = 与当前已选所有衣服的 prefer 命中数量
+  const selected = getSelectedIds();
+  let score = 0;
+  for (const sid of selected) {
+    const p = graph.prefer.get(sid);
+    if (p && p.has(candidateId)) score += 1;
+  }
+  return score;
 }
 
-function renderCandidatesForSlot(slot) {
-  const container = candEls[slot];
-  container.innerHTML = "";
+function violatesAnyDeny(candidateId) {
+  const selected = getSelectedIds();
+  for (const sid of selected) {
+    if (isDenied(sid, candidateId)) return true;
+  }
+  return false;
+}
 
-  const { recommended, explore } = getCandidates(slot);
+function getSelectedIds() {
+  return slots.map(s => outfit[s]?.id).filter(Boolean);
+}
 
-  // 推荐区
-  const recTitle = document.createElement("div");
-  recTitle.className = "meta-line";
-  recTitle.innerHTML = `<strong>✅ 推荐（匹配锚点）</strong>`;
-  container.appendChild(recTitle);
+/** ===== Candidate generation (real-time) ===== */
 
-  const recGrid = document.createElement("div");
-  recGrid.className = "detail-grid";
-  container.appendChild(recGrid);
+function getCandidatesForSlot(slot) {
+  const season = outfit.season;
+  let pool = filterBySeason(getClothes(), season);
 
-  if (recommended.length === 0) {
-    recGrid.innerHTML = `<div class="empty-tip">无推荐</div>`;
-  } else {
-    recommended.slice(0, 16).forEach((c) => recGrid.appendChild(makeCandidateCard(slot, c)));
+  // Slot pool by kind
+  if (slot === "outer") {
+    pool = pool.filter(c => c.kind === "outer");
+  } else if (slot === "main2") {
+    pool = pool.filter(c => c.kind === "jk_set" || c.kind === "daily_set" || c.kind === "inner");
+  } else if (slot === "bottom") {
+    pool = pool.filter(c => c.kind === "bottom");
+  } else if (slot === "socks") {
+    pool = pool.filter(c => c.kind === "socks");
+  } else if (slot === "shoes") {
+    pool = pool.filter(c => c.kind === "shoes");
   }
 
-  // 探索区折叠
+  // bottom 条件：仅当 main2 是 inner 才需要；如果 main2 是套装则 bottom 只能为空
+  if (slot === "bottom") {
+    if (!outfit.main2) {
+      // 主件2未选时，仍允许先选下装（你希望“除了鞋袜以外都可起点”）
+      // 所以这里不限制
+    } else if (outfit.main2.kind !== "inner") {
+      // 套装：下装不需要
+      return { preferred: [], other: [], disabledBecause: "主件2为套装时不需要下装" };
+    }
+  }
+
+  // deny filter + remove selected itself
+  const selectedIds = getSelectedIds();
+  pool = pool.filter(c => !selectedIds.includes(c.id));
+  pool = pool.filter(c => !violatesAnyDeny(c.id));
+
+  // scoring
+  const scored = pool.map(c => ({ c, score: preferScore(c.id) }));
+
+  // preferred = score>0, sorted desc
+  const preferred = scored.filter(x => x.score > 0).sort((a,b) => b.score - a.score).map(x => x.c);
+
+  // other = score==0
+  const other = scored.filter(x => x.score === 0).map(x => x.c);
+
+  return { preferred, other, disabledBecause: "" };
+}
+
+function refreshAllCandidates() {
+  renderSlotCandidates("outer", candOuter);
+  renderSlotCandidates("main2", candMain2);
+  renderSlotCandidates("bottom", candBottom);
+  renderSlotCandidates("socks", candSocks);
+  renderSlotCandidates("shoes", candShoes);
+}
+
+function renderSlotCandidates(slot, container) {
+  container.innerHTML = "";
+  const { preferred, other, disabledBecause } = getCandidatesForSlot(slot);
+
+  if (disabledBecause) {
+    container.innerHTML = `<div class="empty-tip">${disabledBecause}</div>`;
+    return;
+  }
+
+  // Preferred section
+  const prefTitle = document.createElement("div");
+  prefTitle.className = "meta-line";
+  prefTitle.innerHTML = `<strong>⭐ 优先搭配</strong>`;
+  container.appendChild(prefTitle);
+
+  const prefGrid = document.createElement("div");
+  prefGrid.className = "detail-grid";
+  container.appendChild(prefGrid);
+
+  if (!preferred.length) {
+    prefGrid.innerHTML = `<div class="empty-tip">暂无优先推荐</div>`;
+  } else {
+    preferred.slice(0, 18).forEach(c => prefGrid.appendChild(makeCard(slot, c)));
+  }
+
+  // Other section (collapsible)
   const details = document.createElement("details");
   details.style.marginTop = "10px";
 
   const summary = document.createElement("summary");
-  summary.textContent = `🔎 探索（未明确允许，但未冲突）${explore.length ? `：${explore.length}项` : ""}`;
+  summary.textContent = `🔎 其他可选（未冲突）${other.length ? `：${other.length}项` : ""}`;
   details.appendChild(summary);
 
-  const expGrid = document.createElement("div");
-  expGrid.className = "detail-grid";
-  expGrid.style.marginTop = "10px";
-  details.appendChild(expGrid);
+  const otherGrid = document.createElement("div");
+  otherGrid.className = "detail-grid";
+  otherGrid.style.marginTop = "10px";
+  details.appendChild(otherGrid);
 
-  if (explore.length === 0) {
-    expGrid.innerHTML = `<div class="empty-tip">无探索候选</div>`;
+  if (!other.length) {
+    otherGrid.innerHTML = `<div class="empty-tip">无其他候选</div>`;
   } else {
-    explore.slice(0, 24).forEach((c) => expGrid.appendChild(makeCandidateCard(slot, c)));
+    other.slice(0, 30).forEach(c => otherGrid.appendChild(makeCard(slot, c)));
   }
 
   container.appendChild(details);
 }
 
-function makeCandidateCard(slot, cloth) {
+function makeCard(slot, cloth) {
   const card = document.createElement("div");
   card.className = "cloth-card";
 
@@ -289,111 +316,136 @@ function makeCandidateCard(slot, cloth) {
   card.innerHTML = `
     ${img}
     <div class="cloth-name">${escapeHtml(cloth.name)}</div>
-    <div class="meta-line"><span class="tag">${escapeHtml(formatCategory(cloth))}</span></div>
+    <div class="meta-line"><span class="tag">${escapeHtml(formatKind(cloth.kind))}</span></div>
   `;
 
-  card.addEventListener("click", () => applyChoice(slot, cloth));
+  card.addEventListener("click", () => {
+    if (violatesAnyDeny(cloth.id)) {
+      alert("该选择与当前已选存在禁忌搭配，已阻止选择。");
+      return;
+    }
+    applyChoice(slot, cloth);
+  });
+
   return card;
 }
 
+/** ===== Apply choice (real-time update) ===== */
+
 function applyChoice(slot, cloth) {
-  // dress 与 top/bottom 互斥：更符合常识的自动处理
-  if (slot === "dress") {
-    outfit.dress = cloth;
-    outfit.top = null;
-    outfit.bottom = null;
-  } else if (slot === "top" || slot === "bottom") {
-    outfit[slot] = cloth;
-    if (outfit.dress) outfit.dress = null;
-  } else {
-    outfit[slot] = cloth;
+  if (slot === "outer") {
+    outfit.outer = cloth;
+  } else if (slot === "main2") {
+    outfit.main2 = cloth;
+    // 若主件2为套装，则自动清空下装
+    if (cloth.kind === "jk_set" || cloth.kind === "daily_set") {
+      outfit.bottom = null;
+    }
+  } else if (slot === "bottom") {
+    outfit.bottom = cloth;
+  } else if (slot === "socks") {
+    outfit.socks = cloth;
+  } else if (slot === "shoes") {
+    outfit.shoes = cloth;
   }
 
-  // ✅ 默认锚点：最后一次选择的衣服
-  anchorId = cloth.id;
+  // 规则：若主件2是 inner，则下装可选；若主件2是套装，则下装强制空（已处理）
+  renderCurrentOutfit();
+  refreshAllCandidates();
+}
+
+/** ===== Random pick (prefer-first) ===== */
+
+function pickRandomFrom(preferred, other) {
+  if (preferred.length) {
+    // prefer-first：从最高分层随机（我们 preferred 已按分数排序，但这里进一步取最高分层）
+    // 计算最高分
+    const topScore = preferScore(preferred[0].id);
+    const topGroup = preferred.filter(c => preferScore(c.id) === topScore);
+    return topGroup[Math.floor(Math.random() * topGroup.length)];
+  }
+  if (other.length) {
+    return other[Math.floor(Math.random() * other.length)];
+  }
+  return null;
+}
+
+function pickRandomForSlot(slot) {
+  const { preferred, other, disabledBecause } = getCandidatesForSlot(slot);
+  if (disabledBecause) {
+    alert(disabledBecause);
+    return;
+  }
+  const picked = pickRandomFrom(preferred, other);
+  if (!picked) {
+    alert(`没有可选的：${slotLabel(slot)}`);
+    return;
+  }
+  applyChoice(slot, picked);
+}
+
+function pickRandomStart() {
+  const s = startSlot.value; // outer / main2 / bottom
+  pickRandomForSlot(s);
+}
+
+/** ===== Auto-complete ===== */
+
+function autoComplete() {
+  // 起点为空时先随机一个起点（按当前 startSlot）
+  if (getSelectedIds().length === 0) {
+    pickRandomStart();
+  }
+
+  // 主件2优先补全（因为决定是否需要下装）
+  if (!outfit.main2) pickRandomForSlot("main2");
+
+  // 若主件2是 inner，则补下装；是套装则不选下装
+  if (outfit.main2 && outfit.main2.kind === "inner" && !outfit.bottom) {
+    pickRandomForSlot("bottom");
+  }
+
+  // 外搭可选：如果你想默认随机出现，可在这里加概率；现在一键补全默认不强制外搭
+  // 但你也可以希望“有更完整穿搭”——这里给一个 50% 概率自动补外搭：
+  if (!outfit.outer && Math.random() < 0.5) {
+    pickRandomForSlot("outer");
+  }
+
+  if (!outfit.socks) pickRandomForSlot("socks");
+  if (!outfit.shoes) pickRandomForSlot("shoes");
 
   renderCurrentOutfit();
   refreshAllCandidates();
 }
 
-function pickRandomForSlot(slot) {
-  const { recommended, explore } = getCandidates(slot);
+/** ===== Current Outfit Render ===== */
 
-  const pool = recommended.length ? recommended : explore;
-  if (!pool.length) {
-    alert(`没有可选的 ${slotLabel(slot)}`);
-    return;
-  }
-  const c = pool[Math.floor(Math.random() * pool.length)];
-  applyChoice(slot, c);
+function renderCurrentOutfit() {
+  const parts = [];
+  const add = (label, item) => { if (item) parts.push(`${label}:${item.name}`); };
+
+  add("外搭", outfit.outer);
+  add("主件2", outfit.main2);
+  // 下装仅当主件2是内搭时有效展示
+  if (outfit.main2 && outfit.main2.kind === "inner") add("下装", outfit.bottom);
+  add("袜子", outfit.socks);
+  add("鞋子", outfit.shoes);
+
+  const msg = parts.length ? parts.join("  |  ") : "还没有选择。可从外搭/主件2/下装开始。";
+
+  currentOutfitEl.innerHTML = `
+    <div class="history-head">
+      <strong>季节：${formatSeason(outfit.season)}</strong>
+      <span>${parts.length ? "选择中" : "空"}</span>
+    </div>
+    <div class="history-names">${escapeHtml(msg)}</div>
+  `;
+
+  statusTip.textContent =
+    "规则：禁忌(deny)会实时剔除；优先搭配(prefer/allow)会提升推荐与随机优先级。";
 }
 
-function getSelectedIds() {
-  return slots.map((s) => outfit[s]?.id).filter(Boolean);
-}
-
-/**
- * 候选计算逻辑（锚点驱动）：
- * 1) 季节过滤
- * 2) 槽位类别过滤
- * 3) deny 过滤（与当前已选任意一件存在 deny 就排除）
- * 4) 推荐 = 仅锚点 allow 命中（如果锚点有 allow）；探索 = 其余可用
- *    - 若锚点不存在或锚点没有 allow：推荐为空，探索为全部可用
- */
-function getCandidates(slot) {
-  const clothes = getClothes();
-  const season = outfit.season;
-
-  // 1) 季节过滤
-  let pool = clothes.filter((c) => Array.isArray(c.seasons) && c.seasons.includes(season));
-
-  // 2) 槽位过滤
-  pool = pool.filter((c) => matchesSlot(slot, c));
-
-  // 3) deny 过滤
-  const selected = getSelectedIds();
-  pool = pool.filter((c) => {
-    if (selected.includes(c.id)) return false;
-
-    for (const sid of selected) {
-      const denySet = graph.deny.get(sid);
-      if (denySet && denySet.has(c.id)) return false;
-    }
-    return true;
-  });
-
-  // 4) 推荐/探索划分
-  const anchor = anchorId;
-  const allowSet = anchor ? graph.allow.get(anchor) : null;
-
-  if (!anchor || !allowSet || allowSet.size === 0) {
-    return { recommended: [], explore: pool };
-  }
-
-  const recommended = [];
-  const explore = [];
-  for (const c of pool) {
-    if (allowSet.has(c.id)) recommended.push(c);
-    else explore.push(c);
-  }
-
-  return { recommended, explore };
-}
-
-function matchesSlot(slot, cloth) {
-  const cat = cloth.category || inferCategoryFromType(cloth.type);
-
-  if (slot === "outer") return cat === "outer";
-  if (slot === "top") return cat === "top";
-  if (slot === "bottom") return cat === "skirt" || cat === "pants";
-  if (slot === "dress") return cat === "dress";
-  if (slot === "shoes") return cat === "shoes";
-  if (slot === "socks") return cat === "socks";
-
-  return false;
-}
-
-/** ===== Presets (Outfit Presets) ===== */
+/** ===== Presets (save/load) ===== */
 
 async function savePreset() {
   const ids = getSelectedIds();
@@ -463,7 +515,7 @@ async function renderPresetList() {
           <strong>${formatSeason(p.season)}</strong>
           <span>${created}</span>
         </div>
-        <div class="history-names">${names.join(" + ")}</div>
+        <div class="history-names">${escapeHtml(names.join(" + "))}</div>
         ${p.note ? `<div class="history-note">${escapeHtml(p.note)}</div>` : ""}
         <div class="history-actions">
           <button class="primary-btn" type="button">加载</button>
@@ -495,81 +547,51 @@ async function renderPresetList() {
 }
 
 /**
- * items 数组方式：加载时按 category 自动落槽位
- * - 如果有 dress：占用 dress，并清空 top/bottom
- * - bottom：skirt/pants 二选一（取第一个命中的）
- * - 锚点：默认设为“dress 或 top 或 bottom”（优先主件）
+ * items 数组方式：按 kind 自动落槽位
+ * - outer -> outer
+ * - jk_set/daily_set/inner -> main2 (优先套装，其次内搭)
+ * - bottom -> bottom
+ * - socks -> socks
+ * - shoes -> shoes
  */
 function applyPresetItems(ids) {
   const byId = new Map(getClothes().map((c) => [c.id, c]));
   const picked = (ids || []).map((id) => byId.get(id)).filter(Boolean);
 
-  const dress = picked.find((c) => (c.category || inferCategoryFromType(c.type)) === "dress") || null;
-  const outer = picked.find((c) => (c.category || inferCategoryFromType(c.type)) === "outer") || null;
-  const top = picked.find((c) => (c.category || inferCategoryFromType(c.type)) === "top") || null;
-  const bottom =
-    picked.find((c) => {
-      const cat = c.category || inferCategoryFromType(c.type);
-      return cat === "skirt" || cat === "pants";
-    }) || null;
-  const shoes = picked.find((c) => (c.category || inferCategoryFromType(c.type)) === "shoes") || null;
-  const socks = picked.find((c) => (c.category || inferCategoryFromType(c.type)) === "socks") || null;
+  outfit.outer = picked.find(c => c.kind === "outer") || null;
 
-  if (dress) {
-    outfit.dress = dress;
-    outfit.top = null;
-    outfit.bottom = null;
-  } else {
-    outfit.dress = null;
-    outfit.top = top;
-    outfit.bottom = bottom;
-  }
-
-  outfit.outer = outer;
-  outfit.shoes = shoes;
-  outfit.socks = socks;
-
-  // 锚点优先：dress > top > bottom > shoes > socks > outer
-  anchorId =
-    (outfit.dress && outfit.dress.id) ||
-    (outfit.top && outfit.top.id) ||
-    (outfit.bottom && outfit.bottom.id) ||
-    (outfit.shoes && outfit.shoes.id) ||
-    (outfit.socks && outfit.socks.id) ||
-    (outfit.outer && outfit.outer.id) ||
+  // main2 优先套装，否则内搭
+  outfit.main2 =
+    picked.find(c => c.kind === "jk_set" || c.kind === "daily_set") ||
+    picked.find(c => c.kind === "inner") ||
     null;
+
+  outfit.bottom = picked.find(c => c.kind === "bottom") || null;
+  outfit.socks = picked.find(c => c.kind === "socks") || null;
+  outfit.shoes = picked.find(c => c.kind === "shoes") || null;
+
+  // 套装时清空下装
+  if (outfit.main2 && (outfit.main2.kind === "jk_set" || outfit.main2.kind === "daily_set")) {
+    outfit.bottom = null;
+  }
 
   renderCurrentOutfit();
   refreshAllCandidates();
 }
 
-/** ===== Utils ===== */
+/** ===== Formatting ===== */
 
-function inferCategoryFromType(type) {
+function formatKind(kind) {
   const map = {
-    jk_set: "dress",
-    daily_set: "dress",
-    top: "top",
-    skirt: "skirt",
-    pants: "pants",
-    shoes: "shoes",
-    socks: "socks",
-  };
-  return map[type] || "top";
-}
-
-function formatCategory(c) {
-  const cat = c.category || inferCategoryFromType(c.type);
-  const map = {
+    jk_set: "JK套装",
+    daily_set: "日常套装",
     outer: "外搭",
-    top: "上衣",
-    skirt: "裙子",
-    pants: "裤子",
-    dress: "连衣裙/套装",
-    shoes: "鞋子",
+    inner: "内搭",
+    bottom: "下装",
     socks: "袜子",
+    shoes: "鞋子",
   };
-  return map[cat] || cat;
+  return map[kind] || kind || "未分类";
 }
 
 function formatSeason(season) {
@@ -580,11 +602,10 @@ function formatSeason(season) {
 function slotLabel(slot) {
   const map = {
     outer: "外搭",
-    top: "上衣",
+    main2: "主件2（套装/内搭）",
     bottom: "下装",
-    dress: "连衣裙/套装",
-    shoes: "鞋子",
     socks: "袜子",
+    shoes: "鞋子",
   };
   return map[slot] || slot;
 }
@@ -596,68 +617,4 @@ function escapeHtml(str = "") {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-
-function needOuterBySeason(season) {
-  return season === "spring" || season === "autumn" || season === "winter";
-}
-
-function optionalOuterBySeason(season) {
-  return season === "summer";
-}
-
-function isEmptySlot(slot) {
-  return !outfit[slot];
-}
-
-function autoComplete() {
-  // 没有任何起点，就按 startSlot 先随机一个起点
-  if (getSelectedIds().length === 0) {
-    pickRandomForSlot(startSlot.value);
-  }
-
-  // 如果选了 dress，就不要补 top/bottom
-  const hasDress = !!outfit.dress;
-
-  // 季节外搭规则
-  const season = outfit.season;
-  const mustOuter = needOuterBySeason(season);
-  const mayOuter = optionalOuterBySeason(season);
-
-  // 1) 先决定并补结构性槽位：dress vs top+bottom
-  // 如果没有 dress 也没有 top/bottom，则优先补一个结构
-  if (!hasDress && (!outfit.top || !outfit.bottom)) {
-    // 这里不强行 50/50：更贴近“由你当前已选决定”
-    // 如果已经选了 bottom，就补 top；如果已选 top，就补 bottom；都没选就默认补 bottom 再补 top
-    if (outfit.bottom && !outfit.top) {
-      pickRandomForSlot("top");
-    } else if (outfit.top && !outfit.bottom) {
-      pickRandomForSlot("bottom");
-    } else if (!outfit.top && !outfit.bottom && !outfit.dress) {
-      // 没起点或起点不是结构部位（比如鞋袜）
-      pickRandomForSlot("bottom");
-      pickRandomForSlot("top");
-    }
-  }
-
-  // 2) 补 shoes / socks（通常都需要）
-  if (isEmptySlot("shoes")) pickRandomForSlot("shoes");
-  if (isEmptySlot("socks")) pickRandomForSlot("socks");
-
-  // 3) 补 outer：春秋冬必选；夏季可选 50%
-  if (mustOuter) {
-    if (isEmptySlot("outer")) pickRandomForSlot("outer");
-  } else if (mayOuter) {
-    if (isEmptySlot("outer") && Math.random() < 0.5) pickRandomForSlot("outer");
-  }
-
-  // 4) 如果当前是 dress 模式，确保 top/bottom 已清空（applyChoice 已经做了，这里再兜底）
-  if (outfit.dress) {
-    outfit.top = null;
-    outfit.bottom = null;
-  }
-
-  renderCurrentOutfit();
-  refreshAllCandidates();
 }
