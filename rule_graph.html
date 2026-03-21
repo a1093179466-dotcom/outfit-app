@@ -6,27 +6,154 @@
   <title>穿搭网编辑器</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* 只对这个页面加点更像产品的布局 */
-    .graph-wrap { display:flex; gap:12px; height: calc(100vh - 90px); }
-    .graph-left { width: 32%; overflow:auto; }
-    .graph-right { width: 68%; position: relative; overflow:hidden; }
-    .graph-canvas { position: relative; width:100%; height:100%; border:1px dashed #d9dbe3; border-radius:16px; background:#fff; }
+    /* 关键：覆盖全局 container 的居中限宽/横向布局 */
+    .container.graph-page {
+      max-width: none !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 14px 18px !important;
+      display: block !important;
+    }
+
+    .layout {
+      display: flex;
+      gap: 12px;
+      height: calc(100vh - 120px);
+      align-items: stretch;
+    }
+
+    .sidebar {
+      width: 380px;
+      min-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .sidebar .panel {
+      overflow: hidden;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .hintline {
+      font-size: 12px;
+      opacity: 0.8;
+      padding: 8px 10px;
+      border: 1px solid #ececf2;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .wardrobe-box {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .wardrobe-filters {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .wardrobe-list {
+      margin-top: 10px;
+      overflow: auto;
+      flex: 1;
+      padding-right: 4px;
+    }
+
+    .main {
+      flex: 1;
+      min-width: 600px;
+      overflow: hidden;
+    }
+
+    .graph-canvas {
+      position: relative;
+      width: 100%;
+      height: calc(100% - 54px);
+      border: 1px dashed #d9dbe3;
+      border-radius: 16px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    svg.edges { position: absolute; inset: 0; pointer-events: none; }
+
     .node {
-      position:absolute; width:180px; cursor:move; user-select:none;
-      border:1px solid #ececf2; border-radius:14px; padding:10px; background:#fafafa;
+      position: absolute;
+      width: 190px;
+      cursor: move;
+      user-select: none;
+      border: 1px solid #ececf2;
+      border-radius: 14px;
+      padding: 10px;
+      background: #fafafa;
       box-shadow: 0 6px 18px rgba(0,0,0,0.06);
     }
     .node.selected { outline: 3px solid rgba(74,105,189,0.45); }
+
     .node img { width:100%; height:110px; object-fit:cover; border-radius:10px; }
     .node-title { font-weight:700; margin-top:8px; }
     .node-meta { font-size:12px; opacity:0.75; margin-top:4px; }
-    svg.edges { position:absolute; inset:0; pointer-events:none; }
-    .edge-hit { pointer-events:all; cursor:pointer; }
-    .edge-label {
-      font-size:12px; fill:#333;
-      paint-order: stroke; stroke:#fff; stroke-width:4px;
+
+    .node .node-del {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid #e3e6ef;
+      background: rgba(255,255,255,0.95);
+      cursor: pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 800;
+      line-height: 1;
     }
-    .top-actions { display:flex; gap:10px; flex-wrap:wrap; }
+
+    .edge-hit { pointer-events: all; cursor: pointer; }
+    .edge-label {
+      font-size: 12px;
+      fill: #333;
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 4px;
+    }
+
+    .ctx-menu {
+      position: fixed;
+      z-index: 9999;
+      min-width: 160px;
+      border: 1px solid #e3e6ef;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 16px 30px rgba(0,0,0,0.12);
+      padding: 8px;
+      display: none;
+    }
+    .ctx-menu .title { font-weight: 700; font-size: 12px; opacity: 0.8; margin: 4px 6px 8px; }
+    .ctx-menu .row { display:flex; gap:8px; margin:6px 0; }
+    .ctx-menu button {
+      flex:1; padding:8px 10px;
+      border-radius:10px;
+      border:1px solid #e3e6ef;
+      background:#fff; cursor:pointer; font-weight:600;
+    }
+    .ctx-menu button:hover { background:#f6f7fb; }
+    .ctx-menu .danger { border-color:#ffcccc; }
   </style>
 </head>
 <body>
@@ -34,46 +161,68 @@
   <h1>穿搭网编辑器</h1>
 </header>
 
-<div class="container">
-  <div class="top-actions">
-    <a class="link-btn" href="./wardrobe.html">← 返回衣柜详情</a>
-    <button id="saveGraphBtn" class="primary-btn" type="button">保存全部规则</button>
-    <button id="clearCanvasBtn" class="delete-btn" type="button">清空画布（不删数据库）</button>
-    <div class="empty-tip" id="graphTip">拖拽左侧衣服到右侧画布；点击两个节点连线；点击线可切换类型/删除。</div>
-  </div>
-
-  <div class="graph-wrap" style="margin-top:12px;">
-    <section class="panel graph-left">
-      <h2>衣柜</h2>
-      <div class="add-form">
-        <input id="qName" type="text" placeholder="搜索名称…" />
-        <select id="seasonFilter">
-          <option value="">全部季节</option>
-          <option value="spring">春</option>
-          <option value="summer">夏</option>
-          <option value="autumn">秋</option>
-          <option value="winter">冬</option>
-        </select>
-        <select id="kindFilter">
-          <option value="">全部类别</option>
-          <option value="jk_set">JK套装</option>
-          <option value="daily_set">日常套装</option>
-          <option value="outer">外搭</option>
-          <option value="inner">内搭</option>
-          <option value="bottom">下装</option>
-          <option value="socks">袜子</option>
-          <option value="shoes">鞋子</option>
-        </select>
+<div class="container graph-page">
+  <div class="layout">
+    <!-- 左栏：按钮 + 提示 + 衣柜 -->
+    <aside class="sidebar">
+      <div class="actions">
+        <a class="link-btn" href="./wardrobe.html">← 返回衣柜详情</a>
+        <button id="loadAllBtn" class="primary-btn" type="button">加载全部规则</button>
+        <button id="saveGraphBtn" class="primary-btn" type="button">保存画布规则</button>
+        <button id="clearCanvasBtn" class="delete-btn" type="button">清空画布</button>
       </div>
-      <div id="clothList" class="detail-grid"></div>
-    </section>
 
-    <section class="panel graph-right">
+      <div class="hintline" id="graphTip">
+        用法：拖拽衣服到画布 → 点两件连线 → 菜单选 ⭐优先 / ❌禁忌。点线可修改/删除。
+      </div>
+
+      <section class="panel wardrobe-box">
+        <h2>衣柜</h2>
+        <div class="wardrobe-filters">
+          <input id="qName" type="text" placeholder="搜索名称…" />
+          <select id="seasonFilter">
+            <option value="">全部季节</option>
+            <option value="spring">春</option>
+            <option value="summer">夏</option>
+            <option value="autumn">秋</option>
+            <option value="winter">冬</option>
+          </select>
+          <select id="kindFilter">
+            <option value="">全部类别</option>
+            <option value="jk_set">JK套装</option>
+            <option value="daily_set">日常套装</option>
+            <option value="outer">外搭</option>
+            <option value="inner">内搭</option>
+            <option value="bottom">下装</option>
+            <option value="socks">袜子</option>
+            <option value="shoes">鞋子</option>
+          </select>
+        </div>
+
+        <div id="clothList" class="detail-grid wardrobe-list"></div>
+      </section>
+    </aside>
+
+    <!-- 右侧：画布（大空间） -->
+    <main class="panel main">
       <h2>画布</h2>
       <div class="graph-canvas" id="canvas">
         <svg class="edges" id="edgesSvg"></svg>
       </div>
-    </section>
+    </main>
+  </div>
+</div>
+
+<!-- 浮动菜单 -->
+<div id="edgeMenu" class="ctx-menu">
+  <div class="title" id="edgeMenuTitle">连线</div>
+  <div class="row">
+    <button id="menuPrefer" type="button">⭐ 优先</button>
+    <button id="menuDeny" type="button">❌ 禁忌</button>
+  </div>
+  <div class="row">
+    <button id="menuDelete" class="danger" type="button">删除连线</button>
+    <button id="menuCancel" type="button">取消</button>
   </div>
 </div>
 

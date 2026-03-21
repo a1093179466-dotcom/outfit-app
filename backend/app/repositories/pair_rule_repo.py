@@ -3,6 +3,7 @@ import uuid
 from typing import List, Optional
 from app.db.database import get_conn
 
+
 def _normalize_pair(id1: str, id2: str) -> tuple[str, str]:
     return (id1, id2) if id1 < id2 else (id2, id1)
 
@@ -63,4 +64,16 @@ def delete_rule(rule_id: str) -> bool:
     finally:
         conn.close()
 
-        
+def list_all_rules(limit: int = 100000) -> list[dict]:
+    """
+    返回所有 pair_rules（用于前端一次性拉全图）
+    """
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM pair_rules ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()

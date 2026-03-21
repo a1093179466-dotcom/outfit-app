@@ -4,10 +4,11 @@ from app.core.config import API_PREFIX, UPLOAD_DIR
 from app.core.cors import add_cors
 from app.api.router import api_router
 from app.db.init_db import init_db
-
 def create_app() -> FastAPI:
     app = FastAPI(title="Outfit App API")
-
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
     add_cors(app)
     init_db()
 
